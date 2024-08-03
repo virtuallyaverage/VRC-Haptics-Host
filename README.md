@@ -32,7 +32,7 @@ Finally, right-click on the `Haptics Server SEND ME TO DESKTOP.lnk` file and sel
 
 I am using a mish-mash of components right now, but this is the best arduino based scripts I could find: [Arduino CaiVR Branch](https://github.com/fisk1234ost/CaiVR-Custom-Haptic-Vest-V1)
 
-My current plan is to eventually get a firmware going using platform.io and custom UDP packet setup. But until then the server should support this firmware working on almost any wifi enabled chip that can handle i2c, which is some arduino and most esp32/esp8 chips. (I a using a D1 Mini)
+My current plan is to eventually get a firmware going using platform.io and custom UDP packet setup. But until then the server should support [this](https://github.com/fisk1234ost/CaiVR-Custom-Haptic-Vest-V1) firmware working on almost any wifi enabled chip that can handle i2c, which is some arduino and most esp32/esp8 chips. (I a using a D1 Mini)
 
 I have custom cases/modules designed on onshape and will share the .STL and links to that once I am sure they somewhat function.
 
