@@ -36,6 +36,12 @@ My current plan is to eventually get a firmware going using platform.io and cust
 
 I have custom cases/modules designed on onshape and will share the .STL and links to that once I am sure they somewhat function.
 
+**Game Integration:**
+
+The asset provided by CaiVR is NOT COMPATIBLE with this server. I had to modify some of the addresses that his prefab uses to prevent some parameter clashes.
+
+In the Unity folder is the Haptics Prefab that includes both a full PC and a quest version that only shows the collider placement. VRCFURY is used to integrate the menus and avatar placement. It should be as simple as importing vrcfury and dragging a prefab onto the base of the avatar and uploading. 
+
 # Contributors
  **Submit litterally anything *that gets merged* and get your name here**
  
