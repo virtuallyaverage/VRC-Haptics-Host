@@ -1,0 +1,12 @@
+{
+    "server_config": {
+        "serve_rate": 30
+    },
+    "vest_config": {
+        "ip": "192.168.1.245",
+        "port": 1025,
+        "motor_limits": [0, 100],
+        "number_motors": 32,
+        "serv_rate": 30
+    }
+}
