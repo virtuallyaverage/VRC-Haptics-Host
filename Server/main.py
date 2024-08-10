@@ -19,7 +19,7 @@ server_config = full_config['server_config']
 """VEST CONFIG-------------------------------------------------------------------------------------------------------"""
 vest_ip = vest_config['ip']              #Vest server IP
 vest_port = vest_config['port']     #Vest server port
-motor_limits = vest_config['motor_limits'] / 100
+motor_limits = [x / 100 for x in vest_config['motor_limits']]
 server_rate = vest_config['serv_rate'] #target a server refresh rate
 total_motors = vest_config['number_motors']    #Total number of motors!
 
@@ -123,11 +123,18 @@ def check_handler(address, *args):
 def update_mask():
     """Update the motor_mask variable to the latest values in the spine_triggered, hip_triggered, and chest_triggered variables
     """
-    if(checks_enabled):
-        #set each group of indices to the value of the parent collider;
-        motor_mask = set_mask_list(motor_mask, motor_groups["Spine"], spine_triggered)
-        motor_mask = set_mask_list(motor_mask, motor_groups["Hip"], hip_triggered)
-        motor_mask = set_mask_list(motor_mask, motor_groups["Chest"], chest_triggered)
+    #default to all motors off
+    motor_mask = [False] * total_motors
+     
+    if motors_enabled:
+        print("motors enabled")
+        
+        if(checks_enabled):
+            #set each group of indices to the value of the parent collider;
+            motor_mask = set_mask_list(motor_mask, motor_groups["Spine"], spine_triggered)
+            motor_mask = set_mask_list(motor_mask, motor_groups["Hip"], hip_triggered)
+            motor_mask = set_mask_list(motor_mask, motor_groups["Chest"], chest_triggered)
+    
     
 def set_mask_list(mask, indices:list, switch_to: bool):
     """sets the boolean mask input to the switch_to conditions at indices locations
@@ -222,7 +229,8 @@ async def buffer():
         start_time = time.time()
         
         update_mask()
-        vest.send_message("/h", f"{apply_mask(buffered_array, motor_mask)}")  # Sends buffered values
+        array_to_send = apply_mask(buffered_array, motor_mask)
+        vest.send_message("/h", f"{array_to_send}")  # Sends buffered values
         clear_motor_array()
         
         #target frame rate

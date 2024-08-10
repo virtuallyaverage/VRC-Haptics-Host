@@ -74,6 +74,10 @@ There are ALOT of areas that need improvement immediately. The current codebase 
    - Create Platform.io project
       - Same documentation standards as the server. 
       - IF you make your own repository PLEASE LET ME KNOW AND YOU WILL GET LINKED ON HERE. 
+   - Streamline Setup 
+      - auto start with vrc
+      - edit batch file to pull updates from github
+      - edit batch file to check configurations
 
 
 # Design Principles
