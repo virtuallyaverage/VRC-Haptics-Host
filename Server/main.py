@@ -24,7 +24,7 @@ total_motors = vest_config['number_motors']    #Total number of motors!
 
 print(f"VestIP = {vest_ip}")
 print(f"VestPort = {vest_port}")
-print(f"Motor Limits: {motor_limits["max"]*100}% to {motor_limits["min"]*100}%")
+print(f"Motor Limits: {motor_limits["min"]*100}% to {motor_limits["max"]*100}%")
 print(f"Server Message Rate = {server_rate}hz")
 print(f"Number of motors: {total_motors}")
 
@@ -159,11 +159,11 @@ def set_mask(input: bool):
 ############################################ RUNTIME SETUP/MANAGEMENT ######################
 haptic_frame_interval = 1/server_rate
 #Async loop sends motor values after allowing them to be buffered for buffer_length
-async def buffer():
+async def buffer(vest):
     """Infinite loop that asynchronously pushes the buffered_array to the vest at the serve_rate
     """
     while True:
-        global vest, buffered_array
+        global buffered_array
         
         start_time = time.time()
         
@@ -186,17 +186,17 @@ async def buffer():
 ip = "127.0.0.1"
 port = 9001
 
-async def init_main():
+async def init_main(vest):
     server = osc_server.AsyncIOOSCUDPServer((ip, port), dispatcher, asyncio.get_event_loop())
     transport, protocol = await server.create_serve_endpoint()  # Create datagram endpoint and start serving
         
-    await buffer()  # Enter main loop of program
+    await buffer(vest)  # Enter main loop of program
         
     transport.close()  # Clean up serve endpoint
 
 if __name__ == "__main__":
     try:
-        asyncio.run(init_main())
+        asyncio.run(init_main(vest))
         
     except KeyboardInterrupt:
         print("Closing")
