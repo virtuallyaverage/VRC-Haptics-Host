@@ -172,10 +172,6 @@ async def buffer():
         
         update_mask()
         array_to_send = apply_mask(buffered_array, motor_mask)
-        for element in array_to_send:
-            if element != 0:
-                print("NonZero:", array_to_send)
-                break
             
         vest.send_message("/h", f"{array_to_send}")  # Sends buffered values
         
@@ -207,5 +203,4 @@ if __name__ == "__main__":
         
     except KeyboardInterrupt:
         print("Closing")
-        
         exit()
