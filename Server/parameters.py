@@ -65,7 +65,7 @@ class vrc_parameters:
                 
             colliders_seen += num_colliders
             
-        return motor_colliders, colliders_seen
+        return motor_colliders
     
     def _build_parameter_addresses(self,
                                    parameter_prefix = "h_param",
@@ -76,6 +76,7 @@ class vrc_parameters:
         """
         base_parameter = f"/avatar/parameters/{parameter_prefix}/"
         
+        #if anything is added here make sure to intiate it to a default value in teh __init__ function
         parameter_addresses = {
             f'{base_parameter}Enable': (bool, 'motors_enabled'),
             f'{base_parameter}Checks': (bool, 'checks_enabled'),

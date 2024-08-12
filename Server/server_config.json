@@ -10,6 +10,6 @@
                         "min":0.1
                         },
         "number_motors": 32,
-        "serv_rate": 30
+        "serv_rate": 75
     }
 }

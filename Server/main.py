@@ -31,10 +31,9 @@ print(f"Number of motors: {total_motors}")
 #front: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13, 14, 15, 
 #Back: 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
 motor_groups = {
-    """Describes the groups linked to each checking collider"""
-    'Chest': [range(0, 8), range(16, 24)], # 0, 1, 2, 3, 4, 5, 6, 7, + 16, 17, 18, 19, 20, 21, 22, 23, 24,
-    'Spine': [range(8, 12), range(24, 27)],
-    'Hip':   [range(12, 15), range(27, 31)]
+    'Chest': list(range(0, 8, 1)) + list(range(16, 24, 1)), # 0, 1, 2, 3, 4, 5, 6, 7, + 16, 17, 18, 19, 20, 21, 22, 23, 24,
+    'Spine': list(range(8, 12, 1)) + list(range(24, 28, 1)),
+    'Hip':   list(range(12, 16, 1)) + list(range(28, 32, 1))
 }
 
 
@@ -52,6 +51,7 @@ clear_motor_array()
 
 #init vest osc connection
 #try:
+global vest
 vest = udp_client.SimpleUDPClient(vest_ip, vest_port)
 print(f'Client established on: {vest._address}:{vest._port}')
 # TODO: figure out the try and except that should be used here
@@ -69,9 +69,10 @@ def motor_handler(address, *args):
         address (string): the address that the arguments are addressed to.
     """
     global buffered_array
-    
-    scaled_val = (motor_val * motor_range + motor_min) * vrc.intensity_scale
-    buffered_array[vrc.collider_addresses[address]] = rount(scaled_val, 3)
+    print(vrc.intensity_scale)
+    scaled_val = (args[0] * motor_range + motor_min) * vrc.intensity_scale
+    buffered_array[vrc.collider_addresses[address]] = round(scaled_val, 3)
+    #print(f"Address:{address}\nIndex:{vrc.collider_addresses[address]}\nValue:{round(scaled_val, 3)}")
                 
 def check_handler(address, *args):
     """callback function to handle the cross check colliders
@@ -79,7 +80,7 @@ def check_handler(address, *args):
     Args:
         address (string): _description_
     """
-    vrc.handle_checks()
+    vrc.handle_checks(address, args)
     update_mask()
     
 def parameter_handler(address, *args):
@@ -88,7 +89,8 @@ def parameter_handler(address, *args):
     Args:
         address (string): the full address of the message
     """
-    vrc.handle_params()
+    #print(f"PARAM: {address}: {args[0]}")
+    vrc.handle_params(address, args[0])
     
 dispatcher = Dispatcher()
 dispatcher.map("/avatar/parameters/h/*", motor_handler)       #handles haptic data after json is jogged
@@ -101,10 +103,10 @@ def update_mask():
     """Update the motor_mask variable according to new parameters
     """
     #default to all motors off
+    global motor_mask
     set_mask(False)
-     
+    
     if vrc.motors_enabled:
-        
         if(vrc.checks_enabled):
             #set each group of indices to the value of the parent collider;
             motor_mask = set_mask_list(motor_mask, motor_groups["Spine"], vrc.spine_triggered)
@@ -126,14 +128,13 @@ def set_mask_list(mask, indices:list, switch_to: bool):
     Returns:
         list[bool]: the modified mask
     """
-    for index in indices:
-        if 0 <= index < len(mask):
-            mask[index] = switch_to
+    for i in indices:
+        mask[i] = switch_to
     return mask
 
        
 def apply_mask(in_list, mask):
-    """Apply a mask to a list. if the boolean list for index i, list[i] = float(0.0)
+    """Apply a mask to a list. for index i in boolean mask, mask[i] = float(0.0)
 
     Args:
         in_list (list[float]): the list to filter
@@ -148,29 +149,35 @@ def apply_mask(in_list, mask):
             
     return in_list
         
-def set_mask(input: bool):
+def set_mask(r_input: bool):
     """Set the motor_mask to a consistent boolean value
 
     Args:
         input (bool): the bool value to set the whole list to
     """
-    motor_mask = [input] * total_motors
+    global motor_mask
+    motor_mask = [r_input] * total_motors
 
 ############################################ RUNTIME SETUP/MANAGEMENT ######################
 haptic_frame_interval = 1/server_rate
 #Async loop sends motor values after allowing them to be buffered for buffer_length
-async def buffer(vest):
+async def buffer():
     """Infinite loop that asynchronously pushes the buffered_array to the vest at the serve_rate
     """
+    #TODO: REMOVE ASYNC NEED
     while True:
-        global buffered_array
+        global buffered_array, vest
         
         start_time = time.time()
         
         update_mask()
         array_to_send = apply_mask(buffered_array, motor_mask)
+        for element in array_to_send:
+            if element != 0:
+                print("NonZero:", array_to_send)
+                break
+            
         vest.send_message("/h", f"{array_to_send}")  # Sends buffered values
-        clear_motor_array()
         
         #target frame rate
         time_passed = time.time()-start_time
@@ -190,7 +197,7 @@ async def init_main(vest):
     server = osc_server.AsyncIOOSCUDPServer((ip, port), dispatcher, asyncio.get_event_loop())
     transport, protocol = await server.create_serve_endpoint()  # Create datagram endpoint and start serving
         
-    await buffer(vest)  # Enter main loop of program
+    await buffer()  # Enter main loop of program
         
     transport.close()  # Clean up serve endpoint
 
