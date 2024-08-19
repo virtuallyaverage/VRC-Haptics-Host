@@ -61,10 +61,11 @@ class vrc_parameters:
         colliders_seen = 0
         for group, num_colliders in collider_groups:
             for list_index, group_index in zip(range(colliders_seen, colliders_seen+num_colliders), range(num_colliders)):
-                motor_colliders[(f"{base_parameter}/{group} {group_index}")] = list_index
+                motor_colliders[(f"{base_parameter}/{group}_{group_index}")] = list_index
                 
             colliders_seen += num_colliders
-            
+
+        print(motor_colliders)
         return motor_colliders
     
     def _build_parameter_addresses(self,

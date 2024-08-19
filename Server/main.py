@@ -42,7 +42,7 @@ def clear_motor_array():
     """sets the global buffered_array to zero
     """
     global buffered_array
-    buffered_array = [float(0)] * total_motors # resets buffer for next pass
+    buffered_array = [int(0)] * total_motors # resets buffer for next pass
 
 vrc = vrc_parameters()
 
@@ -69,9 +69,8 @@ def motor_handler(address, *args):
         address (string): the address that the arguments are addressed to.
     """
     global buffered_array
-    print(vrc.intensity_scale)
     scaled_val = (args[0] * motor_range + motor_min) * vrc.intensity_scale
-    buffered_array[vrc.collider_addresses[address]] = round(scaled_val, 3)
+    buffered_array[vrc.collider_addresses[address]] = int(scaled_val * 4096) # scale to 12bit integer value
     #print(f"Address:{address}\nIndex:{vrc.collider_addresses[address]}\nValue:{round(scaled_val, 3)}")
                 
 def check_handler(address, *args):
@@ -134,10 +133,10 @@ def set_mask_list(mask, indices:list, switch_to: bool):
 
        
 def apply_mask(in_list, mask):
-    """Apply a mask to a list. for index i in boolean mask, mask[i] = float(0.0)
+    """Apply a mask to a list. for index i in boolean mask, mask[i] = int(0.0)
 
     Args:
-        in_list (list[float]): the list to filter
+        in_list (list[int]): the list to filter
         mask (list[bool]): The mask to apply
 
     Returns:
@@ -145,7 +144,7 @@ def apply_mask(in_list, mask):
     """
     for index, mask_val in enumerate(mask):
         if not mask_val:
-            in_list[index] = float(0.0)
+            in_list[index] = int(0)
             
     return in_list
         
@@ -159,6 +158,17 @@ def set_mask(r_input: bool):
     motor_mask = [r_input] * total_motors
 
 ############################################ RUNTIME SETUP/MANAGEMENT ######################
+def compile_array(int_array):
+    # Convert each integer to a zero-padded 3-digit hexadecimal string
+    hex_strings = [f"{num:04x}" for num in int_array]
+    
+    # Concatenate all hexadecimal strings
+    hex_string = ''.join(hex_strings)
+    
+    return hex_string
+
+
+
 haptic_frame_interval = 1/server_rate
 #Async loop sends motor values after allowing them to be buffered for buffer_length
 async def buffer():
@@ -172,8 +182,8 @@ async def buffer():
         
         update_mask()
         array_to_send = apply_mask(buffered_array, motor_mask)
-            
-        vest.send_message("/h", f"{array_to_send}")  # Sends buffered values
+        array_to_send = compile_array(array_to_send) #Slice off addendum stuff TODO: This shouldn't be necessary
+        vest.send_message("/h", array_to_send)  # Sends array string
         
         #target frame rate
         time_passed = time.time()-start_time
