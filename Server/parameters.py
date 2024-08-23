@@ -4,15 +4,19 @@ class vrc_parameters:
     """
     def __init__(self):
         
-        #bool Parameters
+        # bool Parameters
         self.motors_enabled = True
         self.checks_enabled = False
+        
+        # float Parameters
+        self.intensity_scale = 1.0
+        self.mod_dist = 1.0 # set to zero to disable modulation
+        self.mod_frequency = 1.0
+        
+        # checks
         self.chest_triggered = False
         self.spine_triggered = False
         self.hip_triggered = False
-        
-        # float parameters
-        self.intensity_scale = 1
         
         # address dictionaries
         self.collider_addresses = self._build_collider_addresses()
@@ -20,8 +24,11 @@ class vrc_parameters:
         self.checks_addresses = self._build_checks_addresses()
         
     def handle_params(self, address, *args):
-        #TODO Try and except for parameters not in our dictionary
-        var_type, var_name = self.parameter_addresses[address]
+        try:
+            var_type, var_name, var_descriptions = self.parameter_addresses[address]
+        except KeyError as e:
+            print(f"Parameter not expected: {address}")
+            return
         
         if var_type == type(args[0]):
             setattr(self, var_name, args[0])
@@ -30,8 +37,11 @@ class vrc_parameters:
             print(f"wrong variable type at address: {address}, TYPE: {type(args[0])}, value: {args}")
     
     def handle_checks(self, address, *args):
-        #TODO Try and except for parameters not in our dictionary
-        var_type, var_name = self.checks_addresses[address]
+        try:
+            var_type, var_name = self.checks_addresses[address]
+        except KeyError as e:
+            print(f"Parameter not expected: {address}")
+            return
         
         if var_type == type(args[0]):
             setattr(self, var_name, args[0])
@@ -65,7 +75,7 @@ class vrc_parameters:
                 
             colliders_seen += num_colliders
 
-        print(motor_colliders)
+        #print(motor_colliders)
         return motor_colliders
     
     def _build_parameter_addresses(self,
@@ -77,18 +87,20 @@ class vrc_parameters:
         """
         base_parameter = f"/avatar/parameters/{parameter_prefix}/"
         
-        #if anything is added here make sure to intiate it to a default value in teh __init__ function
+        #if anything is added here make sure to intiate it to a default value in the __init__ function
         parameter_addresses = {
-            f'{base_parameter}Enable': (bool, 'motors_enabled'),
-            f'{base_parameter}Checks': (bool, 'checks_enabled'),
-            f'{base_parameter}Visuals': (bool, 'visuals_enabled'),
-            f'{base_parameter}Intensity': (float, 'intensity_scale'),
+            f'{base_parameter}Enable': (bool, 'motors_enabled', "Enable or disable output (Similar to setting intensity to 0)"),
+            f'{base_parameter}Checks': (bool, 'checks_enabled', "Enable Extra Collision Colliders"),
+            f'{base_parameter}Visuals': (bool, 'visuals_enabled', "Enable In-Game Visualizers"),
+            f'{base_parameter}Intensity': (float, 'intensity_scale', "Final output intensity scale (0-full duty time)"),
+            f'{base_parameter}Modulation': (float, 'mod_dist', "Ratio of input signal to modulated (100-0 percent of modulated signal)"),
+            f'{base_parameter}Mod_Freq': (float, 'mod_frequency', "Frequency to run modulation at (1-255hz)"),
         }
         
         return parameter_addresses
     
     def _build_checks_addresses(self,
-                                   parameter_prefix = "h_Checks",
+                                   parameter_prefix = "h_Check",
                                    ):
         """parameter_addresses = {
             address: (type, name)

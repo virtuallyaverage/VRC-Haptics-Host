@@ -7,7 +7,7 @@
 #include <ArduinoOSCWiFi.h>
 // this is also valid for other platforms which can use only WiFi
 // #include <ArduinoOSC.h>
-
+#include <Wire.h>
 #include <Adafruit_PWMServoDriver.h>
 
 
@@ -19,8 +19,8 @@ const int recv_port = 1025;
 const float target_rate = 45; //hz
 const unsigned long targetPeriod = (1/target_rate)*1000; // rate to period in milliseconds
 
-Adafruit_PWMServoDriver pwm1 = Adafruit_PWMServoDriver(0x40);
-Adafruit_PWMServoDriver pwm2 = Adafruit_PWMServoDriver(0x41);
+Adafruit_PWMServoDriver pwm1 = Adafruit_PWMServoDriver();
+Adafruit_PWMServoDriver pwm2 = Adafruit_PWMServoDriver(0x41, Wire);
 uint8_t pwm2Offset = 16;
 
 //Motor Index Mapping (index used to send motor data to correct motor)
@@ -34,10 +34,14 @@ void setup() {
   Serial.begin(115200);
   
   pwm1.begin();
+  pwm1.setOscillatorFrequency(27000000);
   pwm1.setPWMFreq(1600);  // This is the maximum PWM frequency
 
   pwm2.begin();
+  pwm2.setOscillatorFrequency(27000000);
   pwm2.setPWMFreq(1600);  // This is the maximum PWM frequency
+
+  Wire.setClock(400000);
 
   Serial.println("Program: VestCode");
 
@@ -94,10 +98,10 @@ void onOscReceived(const OscMessage& m) {
   } else {
     diff = millis() - lastStartTime;
     if (diff > targetPeriod) {
-      Serial.print("OVERRUN: ");
+      /*Serial.print("OVERRUN: ");
       Serial.print(diff);
       Serial.print(" Target: ");
-      Serial.println(targetPeriod);
+      Serial.println(targetPeriod);*/
     }
 
     lastStartTime = millis();
@@ -131,6 +135,7 @@ void handle_values(String args){
 }
 
 void setMotorPWM(int motorIndex, uint16_t duty) {
+  Serial.println(motorIndex);
   if (motorIndex >= pwm2Offset ) {
     pwm2.setPin(motorIndex-pwm2Offset, duty);
   } else {
