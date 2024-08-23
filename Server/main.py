@@ -193,11 +193,9 @@ async def buffer():
         start_time = time.time()
         
         update_mask()
-        print(mod.frequency)
         array_to_send = mod.sin_interp(buffered_array)
         array_to_send = applyScaling(array_to_send)
         array_to_send = apply_mask(array_to_send, motor_mask)
-        print(array_to_send)
         array_to_send = compile_array(array_to_send)
         
         vest.send_message("/h", array_to_send)  # Sends array string
