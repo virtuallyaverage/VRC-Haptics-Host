@@ -1,21 +1,34 @@
 # VRC-Haptics-Host
-A highly integrated OSC based haptics sever.
+A server and prefab combo prioritizing practical usability and easy customization.
+## Features
+ - **In-game haptic configuration**
+ - **Imperceptable game -> haptics latency**
+ - **Cheap Hardware (~$50USD)**
+ - **One-Click Avi Install** 
+ - **Unlimited Play Time\***
+ - **Comfort with custom fitted arrangement**
+ - **Eliminate Bhaptics bugs**
 
-# [Original Project](https://github.com/CaiVR/CaiVR-Custom-Haptic-Vest-V1)
-## Why?
-Credit for hardware, firmware, and software development goes to [CaiVR](https://www.youtube.com/@Cai_VR). This is based off of his haptic suit initial project: [Youtube](https://www.youtube.com/watch?v=NpQyehRNkGo), [Github](https://github.com/CaiVR/CaiVR-Custom-Haptic-Vest-V1)
+ *(Support for any Bhaptics equipped avatar coming soon)* 
+ 
+ *\*Unlimited play time provided by fast charge USB power banks and low current haptics*
+# Why?
+I found [SenseShift](https://github.com/senseshift/senseshift-hardware/tree/main) but was unsatisfied with the bugs present in the bhaptics system for VRC. I also found [CaiVR's Project](https://github.com/CaiVR/CaiVR-Custom-Haptic-Vest-V1), [(Youtube Video)](https://youtu.be/NpQyehRNkGo?si=Qb1jhNKtKzWZTeLw) but he has expressed disinterest in continuing [development itterations](https://github.com/CaiVR/CaiVR-Custom-Haptic-Vest-V1/pull/2). So I started designing a relatively simple Hardware, Firmware, Server, and Prefab stack based on his groundwork but with greatly expanded goals. The stack is in its basic stages but has proven (to me) reliable and simple enough in use. 
 
-I made a vest following CaiVR's original tutorial loosely and have made some changes/improvements to both the server and hardware that have been useful in-game and would like to share them. CaiVR does not wish to further complicate the original project since he is working on something else. [[source]()] So I am going to document/publish my modifications here. **CONTRIBUTIONS ARE WELCOMED**
+Credit for initial hardware, firmware, and software development goes to [CaiVR](https://www.youtube.com/@Cai_VR). His initial development spurred a lot of motivation that got this functional. 
 
+#
 Please use the Issues tab for any issues with the software. 
-Feel free to say hi, although I probably won't be able to respond quickly.
-My discord is: @is_average
+I'll get a discord up eventually. If I dont respond to an issue or you would like to discuss something: 
+
+discord:@is_average
+
 
 # Installation
-**Not currently Quest Compatible** 
+**The Server Is Not Currently Quest Compatible** 
 
 **Prequisites:**
-- Any modern Python 3.x version (found here){https://www.python.org/downloads/}
+- Any modern Python 3.x version: [https://www.python.org/downloads/](https://www.python.org/downloads/)
    - **Make sure to check the "Add Python To PATH" box during isntallation**
 - This repository 
    - Green button -> "Download ZIP"
@@ -29,29 +42,28 @@ My discord is: @is_average
 Finally, right-click on the `Haptics Server SEND ME TO DESKTOP.lnk` file and select the `"SEND TO"` menu and select `"Desktop"`. This should put the file on the desktop which will start the server when ran. It should also be available from the windows search bar by searching "haptics" or something similar after a computer restart.
 
 **Hardware:**
+No solid versions of hardware are available at this time. I am currently using a very rough alpha setup. [Early Alpha Vest Version](https://github.com/virtuallyaverage/VRC-Haptics-Host/blob/main/img/full_vest_alpha.jpg?raw=true)
 
-I am using a mish-mash of components right now, but this is the best arduino based scripts I could find: [Arduino CaiVR Branch](https://github.com/fisk1234ost/CaiVR-Custom-Haptic-Vest-V1)
+**Firmware**: 
+See the firmware page: (readme coming soon) [VRC-Haptics-Firmware](https://github.com/virtuallyaverage/VRC-Haptics-Firmware)
 
-My current plan is to eventually get a firmware going using platform.io and custom UDP packet setup. But until then the server should support [this](https://github.com/fisk1234ost/CaiVR-Custom-Haptic-Vest-V1) firmware working on almost any wifi enabled chip that can handle i2c, which is some arduino and most esp32/esp8 chips. (I a using a D1 Mini)
-
-I have custom cases/modules designed on onshape and will share the .STL and links to that once I am sure they somewhat function.
+The very quickly designed case used in the alpha: [**Onshape Link**](https://cad.onshape.com/documents/257bb1e3453d3517fc7e2da0/w/225abaf7356b023129e9ba7c/e/db6db330ea0d5d698d05a615?renderMode=0&uiState=66c80ae2704979529282d8f5)
 
 **Game Integration:**
 
-The asset provided by CaiVR is NOT COMPATIBLE with this server. I had to modify some of the addresses that his prefab uses to prevent some parameter clashes.
+The Prefab Uses VRCFury to integrate configuration options into the base of the avatars menu. At any time this prefab can be disabled/deleted without permanantly modifying the avatar at any point. 
+[Radial Menu](https://github.com/virtuallyaverage/VRC-Haptics-Host/blob/main/img/radial.png?raw=true)
 
-In the Unity folder is the Haptics Prefab that includes both a full PC and a quest version that only shows the collider placement. VRCFURY is used to integrate the menus and avatar placement. It should be as simple as importing vrcfury and dragging a prefab onto the base of the avatar and uploading. 
+[Masc Prefab](https://github.com/virtuallyaverage/VRC-Haptics-Host/blob/main/img/masc_prefab.png?raw=true)
+[Fem Prefab](https://github.com/virtuallyaverage/VRC-Haptics-Host/blob/main/img/fem_prefab.png?raw=true)
 
-# Contributors
- **Submit litterally anything *that gets merged* and get your name here**
- 
- **YES, A SINGLE DOCSTRING WILL GET A NAME HERE** 
+In the Unity folder, the Haptics Prefab includes both a full PC and a quest version that only shows the collider placement. VRCFURY is used to integrate the menus and avatar placement. It should be as simple as importing vrcfury in VRC Creator Companian and dragging a prefab onto the base of the avatar and uploading. 
 
 # Goals
 ## Long-Time Goals
  - More App support
  - Improved VRC Integration
- - Live Configuration
+ - Live Server Configuration
  - Better Error handling
  - Working UI
  - Automatic Unity Installer
@@ -59,38 +71,36 @@ In the Unity folder is the Haptics Prefab that includes both a full PC and a que
  - Custom/Easy Feedback Configurations
 
 ## Current Areas of Improvment:
-My time for this project is very limited at the moment since I work 60-70hrs a week and have medical issues. ANY little thing helps, even if it is just reordering what is already there. Anyone willing to write good(readable) documentation for the project is worth their weight in gold to me. 
+My time for this project is very limited at the moment since I work 60-70hrs a week and have medical issues. ANY little thing helps, even if it is just reordering what is already there. Anyone willing to write good(readable) documentation for the project is worth their weight in gold to me.
 
-I will accept well curated AI generations, please denote when one is used significantly though.
 There are ALOT of areas that need improvement immediately. The current codebase is a wreck, there is no proper scope management, and I kind of scattered functions willy-nilly during initial developement. 
  
 ### Urgent-ish needs:
-   - Major Refactoring
-      - split out functions to their own modules
-      - implement object based scope management (remove global variables entirely)
-      - document functions/objects
-   - Start code docs 
-      - The goal is to have a properly formatted docstring on each function added to the main repository.
-   - Create Platform.io project
-      - Same documentation standards as the server. 
-      - IF you make your own repository PLEASE LET ME KNOW AND YOU WILL GET LINKED ON HERE. 
-   - Streamline Setup 
-      - auto start with vrc
-      - edit batch file to pull updates from github
-      - edit batch file to check configurations
+   - [ ] Major Refactoring
+      - [ ] split out functions to their own modules
+      - [ ] implement proper scope management
+      - [ ] document functions/objects
+   -  [x] Start project docs 
+      - [ ] The goal is to have an actual wiki eventuallys
+   -  [x] Create Platform.io project
+      - [ ] Same documentation standards as the server. 
+   - [ ] Streamline Setup 
+      - [ ] auto start with vrc
+      - [ ] edit batch file to pull updates from github
+      - [ ] edit batch file to check configurations
 
 
 # Design Principles
 Contribution is more than appreciated, but please keep it close/aligned with the projects over all goals:
  - Robust 
     - not many "hacky" work arounds
-    - feel free to open a branch or your own fork if you would like to work in collaboration before merging to main
+    - feel free to open a branch on your own fork if you would like to work in collaboration before merging to main
  - Simple To set up 
     - users shouldn't have to spend half an hour downloading python dependencies, something similar to AUTOMATIC's Stable Diffusion is the goal. 
- - Follow common Python syntax, such as snake case variables (variable_name)
+ - Follow common Python syntax, such as snake case variables
  - **Readable Code** 
     - I would prefer having slightly less performant code if it is easily understandable. 
     - Please avoid ambigous variable naming (temp, i, j, etc.)
 
-If the project takes off than rules and goals can change as needed. These are just general guidelines to start off. 
+If the project takes off than rules and goals can change as needed. These are just my starting out thoughts.
 

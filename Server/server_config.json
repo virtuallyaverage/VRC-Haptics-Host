@@ -3,13 +3,13 @@
         "serve_rate": 30
     },
     "vest_config": {
-        "ip": "192.168.1.100",
+        "ip": "192.168.1.243",
         "port": 1025,
         "motor_limits": {
                         "max":1.0,
                         "min":0.0
                         },
         "number_motors": 32,
-        "serv_rate": 250
+        "serv_rate": 360
     }
 }

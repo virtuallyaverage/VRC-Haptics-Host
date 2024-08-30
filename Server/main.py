@@ -6,6 +6,7 @@ from pythonosc.dispatcher import Dispatcher
 from pythonosc import udp_client, osc_server
 
 from parameters import vrc_parameters
+from modulation import Modulation
 
 """VRCHAT & AVATAR CONFIG--------------------------------------------------------------------------------------------"""
 with open('server_config.json', 'r') as config:       #Reads Config Json and puts string into value
@@ -45,6 +46,7 @@ def clear_motor_array():
     buffered_array = [int(0)] * total_motors # resets buffer for next pass
 
 vrc = vrc_parameters()
+mod = Modulation()
 
 motor_mask = [True] * total_motors
 clear_motor_array()
@@ -59,9 +61,6 @@ print(f'Client established on: {vest._address}:{vest._port}')
 
 ############################## VRC OSC HANDLERS ########################################
 
-motor_max = motor_limits["max"]
-motor_min = motor_limits["min"]
-motor_range = motor_max - motor_min
 def motor_handler(address, *args):
     """callback function that handles the motor osc messages.
 
@@ -69,8 +68,7 @@ def motor_handler(address, *args):
         address (string): the address that the arguments are addressed to.
     """
     global buffered_array
-    scaled_val = (args[0] * motor_range + motor_min) * vrc.intensity_scale
-    buffered_array[vrc.collider_addresses[address]] = int(scaled_val * 4096) # scale to 12bit integer value
+    buffered_array[vrc.collider_addresses[address]] = args[0]
     #print(f"Address:{address}\nIndex:{vrc.collider_addresses[address]}\nValue:{round(scaled_val, 3)}")
                 
 def check_handler(address, *args):
@@ -90,6 +88,10 @@ def parameter_handler(address, *args):
     """
     #print(f"PARAM: {address}: {args[0]}")
     vrc.handle_params(address, args[0])
+    
+    #pass updated values to modulation
+    mod.set_mod_frequency(int(vrc.mod_frequency*25))
+    mod.set_mod_amount(vrc.mod_dist)
     
 dispatcher = Dispatcher()
 dispatcher.map("/avatar/parameters/h/*", motor_handler)       #handles haptic data after json is jogged
@@ -130,23 +132,6 @@ def set_mask_list(mask, indices:list, switch_to: bool):
     for i in indices:
         mask[i] = switch_to
     return mask
-
-       
-def apply_mask(in_list, mask):
-    """Apply a mask to a list. for index i in boolean mask, mask[i] = int(0.0)
-
-    Args:
-        in_list (list[int]): the list to filter
-        mask (list[bool]): The mask to apply
-
-    Returns:
-        _type_: modified list with mask applied
-    """
-    for index, mask_val in enumerate(mask):
-        if not mask_val:
-            in_list[index] = int(0)
-            
-    return in_list
         
 def set_mask(r_input: bool):
     """Set the motor_mask to a consistent boolean value
@@ -157,17 +142,44 @@ def set_mask(r_input: bool):
     global motor_mask
     motor_mask = [r_input] * total_motors
 
-############################################ RUNTIME SETUP/MANAGEMENT ######################
+######################################## before-send array processing ######################
 def compile_array(int_array):
     # Convert each integer to a zero-padded 3-digit hexadecimal string
-    hex_strings = [f"{num:04x}" for num in int_array]
+    hex_strings = [f"{int(num):04x}" for num in int_array]
     
     # Concatenate all hexadecimal strings
     hex_string = ''.join(hex_strings)
     
     return hex_string
 
+motor_max = motor_limits["max"]
+motor_min = motor_limits["min"]
+motor_range = motor_max - motor_min
+def applyScaling(float_array: list[float]) -> list[int]:
+    int_array = [int(0)] * 32
+    for index, element in enumerate(float_array):
+        scaled_val = (element * motor_range + motor_min) * vrc.intensity_scale
+        int_array[index] = int(scaled_val * 4096)
+        
+    return int_array
 
+def apply_mask(in_list, mask):
+    """Apply a mask to a list. for index i in boolean mask, mask[i] = int(0.0)
+
+    Args:
+        in_list (list[int]): the list to filter
+        mask (list[bool]): The mask to apply
+
+    Returns:
+        _type_: modified list with mask applied
+    """
+
+    for index, mask_val in enumerate(mask):
+        if not mask_val:
+            in_list[index] = int(0)
+    return in_list
+
+############################################ RUNTIME SETUP/MANAGEMENT ######################
 
 haptic_frame_interval = 1/server_rate
 #Async loop sends motor values after allowing them to be buffered for buffer_length
@@ -181,8 +193,11 @@ async def buffer():
         start_time = time.time()
         
         update_mask()
-        array_to_send = apply_mask(buffered_array, motor_mask)
-        array_to_send = compile_array(array_to_send) #Slice off addendum stuff TODO: This shouldn't be necessary
+        array_to_send = mod.sin_interp(buffered_array)
+        array_to_send = applyScaling(array_to_send)
+        array_to_send = apply_mask(array_to_send, motor_mask)
+        array_to_send = compile_array(array_to_send)
+        
         vest.send_message("/h", array_to_send)  # Sends array string
         
         #target frame rate
