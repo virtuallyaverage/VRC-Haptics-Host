@@ -1,5 +1,6 @@
 from time import time
 import numpy as np
+#c3: 243, s3: 244
 
 class Modulation:
     def __init__(self, frequency:int = 10, mod_dist:float = 1.0):
