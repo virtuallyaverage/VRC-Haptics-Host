@@ -65,7 +65,6 @@ class vrc_handler:
                 
             colliders_seen += num_colliders
 
-        print(motor_colliders)
         return motor_colliders
     
     def _build_parameter_addresses(self,

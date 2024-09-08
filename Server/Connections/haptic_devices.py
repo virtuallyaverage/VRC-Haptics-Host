@@ -18,7 +18,7 @@ class haptic_devices:
 
     def _device_detected(self, name, device_info):
         self.devices[name] = device_info
-        print(f"Connecting: {name} at ip: {device_info['ip']}")
+        print(f"Connecting to: {name} at ip: {inet_ntoa(device_info['ip'])}")
         self.handlers.append(board_handler(
             inet_ntoa(device_info['ip']), 
             self.own_ip,

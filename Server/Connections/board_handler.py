@@ -41,7 +41,6 @@ class board_handler:
         # create sending client for this device
         self.client = SimpleUDPClient(self.board_ip, self.send_port)
         self.client.send_message('/ping', self.recv_port) # send ping after server already set up
-        print("Ping sent to:", self.board_ip, ':', self.send_port)
         
     def tick(self, motor_data):
         current_time = time.time()
@@ -54,12 +53,9 @@ class board_handler:
             diff = time.time() - self.last_htrbt 
             if diff > 1.5:
                 self.state = 'EXPIRED'
-                if (self.announce_disc and self.was_announced):
+                if (self.announce_disc and not self.was_announced):
                     print(f"{self.name} Disconnected.")
-                    self.was_announced = True
-                    
-            
-            
+                    self.was_announced = True 
 
     def _handle_hrtbt(self, address, *args):
         self.last_htrbt = time.time()
