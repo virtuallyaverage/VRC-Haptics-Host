@@ -1,15 +1,14 @@
 {
-    "server_config": {
-        "serve_rate": 30
+    "server": {
+        "serve_rate": 30,
+        "own_ip": "192.168.1.104"
     },
-    "vest_config": {
-        "ip": "192.168.1.100",
-        "port": 1025,
+    "vest": {
         "motor_limits": {
                         "max":1.0,
                         "min":0.0
                         },
         "number_motors": 32,
-        "serv_rate": 250
+        "serv_rate": 350
     }
 }

@@ -1,5 +1,5 @@
 
-class vrc_parameters:
+class vrc_handler:
     """a handler for all recieved vrc parameters and osc addresses
     """
     def __init__(self):
@@ -106,7 +106,7 @@ class vrc_parameters:
 
     
 if __name__ == "__main__":
-    parameters = vrc_parameters()
+    parameters = vrc_handler()
     print(parameters.collider_addresses)
     print(parameters.parameter_addresses)
     print(parameters.checks_addresses)

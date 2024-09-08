@@ -5,27 +5,22 @@ import time
 from pythonosc.dispatcher import Dispatcher
 from pythonosc import udp_client, osc_server
 
-from parameters import vrc_parameters
+from Connections.vrc_handler import vrc_handler
+from Connections.haptic_devices import haptic_devices
 
 """VRCHAT & AVATAR CONFIG--------------------------------------------------------------------------------------------"""
 with open('server_config.json', 'r') as config:       #Reads Config Json and puts string into value
     full_config = json.load(config)
     print(full_config)
 
-vest_config = full_config['vest_config']
-server_config = full_config['server_config']
+vest_config = full_config['vest']
+server_config = full_config['server']
 
 """VEST CONFIG-------------------------------------------------------------------------------------------------------"""
-vest_ip = vest_config['ip']              #Vest server IP
-vest_port = vest_config['port']     #Vest server port
 motor_limits = vest_config['motor_limits']
-server_rate = vest_config['serv_rate'] #target a server refresh rate
 total_motors = vest_config['number_motors']    #Total number of motors!
 
-print(f"VestIP = {vest_ip}")
-print(f"VestPort = {vest_port}")
 print(f"Motor Limits: {motor_limits["min"]*100}% to {motor_limits["max"]*100}%")
-print(f"Server Message Rate = {server_rate}hz")
 print(f"Number of motors: {total_motors}")
 
 #front: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13, 14, 15, 
@@ -44,18 +39,11 @@ def clear_motor_array():
     global buffered_array
     buffered_array = [int(0)] * total_motors # resets buffer for next pass
 
-vrc = vrc_parameters()
+vrc = vrc_handler()
+devices = haptic_devices(full_config, server_config['own_ip'])
 
 motor_mask = [True] * total_motors
 clear_motor_array()
-
-#init vest osc connection
-#try:
-global vest
-vest = udp_client.SimpleUDPClient(vest_ip, vest_port)
-print(f'Client established on: {vest._address}:{vest._port}')
-# TODO: figure out the try and except that should be used here
-# mainly the one for when there are two servers running
 
 ############################## VRC OSC HANDLERS ########################################
 
@@ -168,48 +156,34 @@ def compile_array(int_array):
     return hex_string
 
 
-
-haptic_frame_interval = 1/server_rate
-#Async loop sends motor values after allowing them to be buffered for buffer_length
 async def buffer():
-    """Infinite loop that asynchronously pushes the buffered_array to the vest at the serve_rate
+    """Infinite loop that pushes the buffered_array to the vest at the serve_rate
     """
-    #TODO: REMOVE ASYNC NEED
+
     while True:
         global buffered_array, vest
         
         start_time = time.time()
-        
+        #TODO: need to set up per-device mask and motor values
         update_mask()
         array_to_send = apply_mask(buffered_array, motor_mask)
-        array_to_send = compile_array(array_to_send) #Slice off addendum stuff TODO: This shouldn't be necessary
-        vest.send_message("/h", array_to_send)  # Sends array string
+        array_to_send = compile_array(array_to_send)
+        devices.tick({'vest':array_to_send}) 
         
-        #target frame rate
-        time_passed = time.time()-start_time
-        if time_passed < haptic_frame_interval:
-            sleep_time = (haptic_frame_interval-time_passed)
-        else:
-            print(time_passed-haptic_frame_interval)
-            print("MAIN LOOP OVERRUN")
-            sleep_time = 0
-            
-        await asyncio.sleep(sleep_time)
 
 ip = "127.0.0.1"
 port = 9001
 
-async def init_main(vest):
+async def init_main():
     server = osc_server.AsyncIOOSCUDPServer((ip, port), dispatcher, asyncio.get_event_loop())
-    transport, protocol = await server.create_serve_endpoint()  # Create datagram endpoint and start serving
+    await server.create_serve_endpoint()  # Create datagram endpoint and start serving
         
     await buffer()  # Enter main loop of program
         
-    transport.close()  # Clean up serve endpoint
 
 if __name__ == "__main__":
     try:
-        asyncio.run(init_main(vest))
+        asyncio.run(init_main())
         
     except KeyboardInterrupt:
         print("Closing")
