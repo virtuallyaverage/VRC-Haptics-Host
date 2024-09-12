@@ -92,7 +92,6 @@ class board_handler:
                 if self.state != 'EXPIRED' and self.state != 'DISCONNECTED':
                     self.state = 'EXPIRED'
                     if (self.announce_disc and not self.was_announced):
-                        print(diff)
                         print(f"{self.name} Disconnected.")
                         self.was_announced = True    
                     
@@ -117,8 +116,6 @@ class board_handler:
             
         # convert, compile, and send
         int_array = self.mod.float_to_int16(modulated_array)
-        print(f"Is enabled: {self.vrc_board.motors_enabled}")
-        print(int_array)
         hex_string = self._compile_array(int_array)  
         self.client.send_message("/h", hex_string) # Send update over OSC
         
