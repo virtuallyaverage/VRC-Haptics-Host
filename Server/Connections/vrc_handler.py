@@ -102,6 +102,76 @@ class vrc_handler:
         }
         
         return checks_addresses
+    
+    
+class VRCBoardHandler:
+    def __init__(self, 
+                 collider_groups: list[tuple[str, int]],
+                 ) -> None:
+        #bool Parameters
+        self.motors_enabled = True
+        self.visuals_enabled = False
+        
+        # float parameters
+        self.intensity_scale = 1
+        
+        self.collider_addresses = self._build_collider_addresses(collider_groups=collider_groups)
+        self.parameter_addresses = self._build_parameter_addresses()
+        
+    def get_collider_addresses(self) -> list[str]:
+        return self.collider_addresses
+    
+    def get_parameter_addresses(self) -> list[str]:
+        return self.parameter_addresses
+        
+    def _build_collider_addresses(self, 
+                                   motor_prefix = 'h', 
+                                   collider_groups = [("Front", 16), ("Back", 16)]
+                                   ):
+        """Returns a dictionary mapping addresses to their index in the motor array
+
+        Args:
+            motor_prefix (_type_): prefix past the default avatar 
+            collider_groups (_type_): _description_
+
+        Returns:
+            _type_: _description_
+        """
+
+        base_parameter = f"/avatar/parameters/{motor_prefix}"
+        
+        motor_colliders = {}
+        
+        # I know there has to be a linear scaling method, I don't care enough to implement it
+        colliders_seen = 0
+        for group, num_colliders in collider_groups:
+            for list_index, group_index in zip(range(colliders_seen, colliders_seen+num_colliders), range(num_colliders)):
+                motor_colliders[(f"{base_parameter}/{group}_{group_index}")] = list_index
+                
+            colliders_seen += num_colliders
+        self.num_colliders = colliders_seen
+
+        return motor_colliders
+     
+    def _build_parameter_addresses(self,
+                                   parameter_prefix = "h_param",
+                                   ):
+        """parameter_addresses = {
+            address: (type, variable_name)
+        }
+        """
+        base_parameter = f"/avatar/parameters/{parameter_prefix}/"
+        
+        #if anything is added here make sure to intiate it to a default value in the __init__ function
+        parameter_addresses = {
+            f'{base_parameter}Enable': (bool, 'motors_enabled'),
+            f'{base_parameter}Visuals': (bool, 'visuals_enabled'),
+            f'{base_parameter}Intensity': (float, 'intensity_scale'),
+        }
+        
+        return parameter_addresses
+        
+    
 
     
 if __name__ == "__main__":

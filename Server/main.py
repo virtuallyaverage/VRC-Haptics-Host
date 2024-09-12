@@ -147,7 +147,7 @@ def set_mask(r_input: bool):
 
 ############################################ RUNTIME SETUP/MANAGEMENT ######################
 def compile_array(int_array):
-    # Convert each integer to a zero-padded 3-digit hexadecimal string
+    # Convert each integer to a zero-padded 4-byte hexadecimal string
     hex_strings = [f"{num:04x}" for num in int_array]
     
     # Concatenate all hexadecimal strings
