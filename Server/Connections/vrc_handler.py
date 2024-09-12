@@ -1,108 +1,54 @@
-
-class vrc_handler:
-    """a handler for all recieved vrc parameters and osc addresses
-    """
-    def __init__(self):
+import threading
+import numpy as np
+from pythonosc.dispatcher import Dispatcher
+from pythonosc.osc_server import BlockingOSCUDPServer
+class VRCConnnectionHandler:
+    def __init__(self,
+                 vrc_ip: str = "127.0.0.1",
+                 recv_port: int = 9001,
+                 base_addr: str = "/avatar/parameters/"
+                 ) -> None:
         
-        #bool Parameters
-        self.motors_enabled = True
-        self.checks_enabled = False
-        self.chest_triggered = False
-        self.spine_triggered = False
-        self.hip_triggered = False
+        self.recv_port = recv_port
+        self.vrc_ip = vrc_ip
         
-        # float parameters
-        self.intensity_scale = 1
+        self.registered_callbacks = []
         
-        # address dictionaries
-        self.collider_addresses = self._build_collider_addresses()
-        self.parameter_addresses = self._build_parameter_addresses()
-        self.checks_addresses = self._build_checks_addresses()
+        self.server = None
         
-    def handle_params(self, address, *args):
-        #TODO Try and except for parameters not in our dictionary
-        var_type, var_name = self.parameter_addresses[address]
+        # Create receiving server for vrc
+        self.dispatcher = Dispatcher()
+        self.dispatcher.map(f"{base_addr}*", self.handle_address)
+        self.startServer()
         
-        if var_type == type(args[0]):
-            setattr(self, var_name, args[0])
-            print(var_name, "set to:", args[0])
+    def handle_address(self, address: str, *args):
+        for callback in self.registered_callbacks:
+            callback(address, args)
+            
+    def register_callback(self, callback):
+        self.registered_callbacks.append(callback)
+        
+    def remove_callback(self, callback) -> bool:
+        if callback in self.registered_callbacks:
+            self.registered_callbacks.remove(callback)
+            return True
         else:
-            print(f"wrong variable type at address: {address}, TYPE: {type(args[0])}, value: {args}")
-    
-    def handle_checks(self, address, *args):
-        #TODO Try and except for parameters not in our dictionary
-        var_type, var_name = self.checks_addresses[address]
+            return False
+            
+    def startServer(self):
+        #shut down server if already running
+        if self.server:
+            self.server.shutdown()
+            self.server_thread.join()
+            
+        # Create receiving server for vrc
+        self.server = BlockingOSCUDPServer((self.vrc_ip, self.recv_port), self.dispatcher)
+        self.server_thread = threading.Thread(target=self.server.serve_forever)
+        self.server_thread.start()
         
-        if var_type == type(args[0]):
-            setattr(self, var_name, args[0])
-            print(var_name, "set to:", args[0])
-        else:
-            print(f"wrong varible type at address: {address}, TYPE: {type(args[0])}, value: {args}")
-        
-    def _build_collider_addresses(self, 
-                                   motor_prefix = 'h', 
-                                   collider_groups = [("Front", 16), ("Back", 16)]
-                                   ):
-        """Returns a dictionary mapping addresses to their index in the motor array
-
-        Args:
-            motor_prefix (_type_): prefix past the default avatar 
-            collider_groups (_type_): _description_
-
-        Returns:
-            _type_: _description_
-        """
-
-        base_parameter = f"/avatar/parameters/{motor_prefix}"
-        
-        motor_colliders = {}
-        
-        # I know there has to be a linear scaling method, I don't care enough to implement it
-        colliders_seen = 0
-        for group, num_colliders in collider_groups:
-            for list_index, group_index in zip(range(colliders_seen, colliders_seen+num_colliders), range(num_colliders)):
-                motor_colliders[(f"{base_parameter}/{group}_{group_index}")] = list_index
-                
-            colliders_seen += num_colliders
-
-        return motor_colliders
-    
-    def _build_parameter_addresses(self,
-                                   parameter_prefix = "h_param",
-                                   ):
-        """parameter_addresses = {
-            address: type
-        }
-        """
-        base_parameter = f"/avatar/parameters/{parameter_prefix}/"
-        
-        #if anything is added here make sure to intiate it to a default value in teh __init__ function
-        parameter_addresses = {
-            f'{base_parameter}Enable': (bool, 'motors_enabled'),
-            f'{base_parameter}Checks': (bool, 'checks_enabled'),
-            f'{base_parameter}Visuals': (bool, 'visuals_enabled'),
-            f'{base_parameter}Intensity': (float, 'intensity_scale'),
-        }
-        
-        return parameter_addresses
-    
-    def _build_checks_addresses(self,
-                                   parameter_prefix = "h_Checks",
-                                   ):
-        """parameter_addresses = {
-            address: (type, name)
-        }
-        """
-        base_parameter = f"/avatar/parameters/{parameter_prefix}/"
-        
-        checks_addresses = {
-            f'{base_parameter}Chest': (bool, 'chest_triggered'),
-            f'{base_parameter}Spine': (bool, 'spine_triggered'),
-            f'{base_parameter}Hip': (bool, 'hip_triggered'),
-        }
-        
-        return checks_addresses
-    
+    def close(self):
+        self.server.shutdown()
+        self.server_thread.join()
     
 class VRCBoardHandler:
     def __init__(self, 
@@ -115,24 +61,49 @@ class VRCBoardHandler:
         # float parameters
         self.intensity_scale = 1
         
+        self.num_colliders = 0
+        
+        # build addresses
         self.collider_addresses = self._build_collider_addresses(collider_groups=collider_groups)
         self.parameter_addresses = self._build_parameter_addresses()
+        
+        self.param = {**self.collider_addresses, **self.parameter_addresses}
+        
+        self.collider_values = np.array([float(0)] * self.num_colliders)
         
     def get_collider_addresses(self) -> list[str]:
         return self.collider_addresses
     
     def get_parameter_addresses(self) -> list[str]:
         return self.parameter_addresses
+    
+    def vrc_callback(self, address, *args):
+        print(f"VRC callback called:{address}: Args:{args}")
+        """Take general address adn see if we need to update our variables
+
+        Args:
+            address (_type_): _description_
+        """
+        if (address in self.collider_addresses.keys()):
+            self.collider_values[self.collider_addresses[address]] = args[0][0]
+        elif (address in self.parameter_addresses.keys()):
+            var_type, var_name = self.parameter_addresses[address]
+        
+            if var_type == type(args[0][0]):
+                setattr(self, var_name, args[0][0])
+                print(var_name, "set to:", args[0][0])
+            else:
+                print(f"wrong variable type at address: {address}, TYPE: {type(args[0][0])}, value: {args}")
         
     def _build_collider_addresses(self, 
                                    motor_prefix = 'h', 
                                    collider_groups = [("Front", 16), ("Back", 16)]
-                                   ):
+                                   ) -> dict[str: int]:
         """Returns a dictionary mapping addresses to their index in the motor array
 
         Args:
             motor_prefix (_type_): prefix past the default avatar 
-            collider_groups (_type_): _description_
+            collider_groups (_type_): groups and how many motors are in them
 
         Returns:
             _type_: _description_
@@ -155,7 +126,7 @@ class VRCBoardHandler:
      
     def _build_parameter_addresses(self,
                                    parameter_prefix = "h_param",
-                                   ):
+                                   ) -> dict[str: tuple[bool, str]]:
         """parameter_addresses = {
             address: (type, variable_name)
         }
@@ -175,9 +146,9 @@ class VRCBoardHandler:
 
     
 if __name__ == "__main__":
-    parameters = vrc_handler()
-    print(parameters.collider_addresses)
-    print(parameters.parameter_addresses)
-    print(parameters.checks_addresses)
+    connection = VRCConnnectionHandler()
+    board = VRCBoardHandler([("Front", 16), ("Back", 16)])
+    
+    connection.close()
     
 

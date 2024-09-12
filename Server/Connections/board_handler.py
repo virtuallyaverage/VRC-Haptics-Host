@@ -8,6 +8,7 @@ from pythonosc.osc_server import BlockingOSCUDPServer
 #wrap locals in check to allow file testing
 if __name__ != "__main__":
     from Modulation.modulator import BoardModulator  
+    from Connections.vrc_handler import VRCBoardHandler
 else:
     import importlib.util
     import sys
@@ -52,7 +53,6 @@ class board_handler:
         self.enabled = enabled
         self.vrc_groups = vrc_groups
         self.num_motors = sum([ num for _, num in vrc_groups])
-        print(self.num_motors)
         
         #state manager setup
         self.state = 'NEW'
@@ -63,8 +63,9 @@ class board_handler:
         self.last_update_time = 0
         self.last_htrbt = 0 # not been pinged yet
         
-        # Instantiate modulator
+        # Instantiate sub-classes
         self.mod = BoardModulator(10, 0.5)
+        self.vrc_board = VRCBoardHandler(collider_groups=vrc_groups)
             
         # Create receiving server for this device
         self.dispatcher = Dispatcher()
@@ -77,7 +78,8 @@ class board_handler:
         self.client = SimpleUDPClient(self.board_ip, self.send_port)
         self.client.send_message('/ping', self.recv_port) # send ping after server already set up
         
-    def tick(self, motor_data: list[int]):
+    def tick(self) -> None:
+        
         if self.last_htrbt != 0:
             diff = time.time() - self.last_htrbt 
             if diff > 1.5:
@@ -86,35 +88,30 @@ class board_handler:
                     print(f"{self.name} Disconnected.")
                     self.was_announced = True     
         
-        time_till = self.update_period - (time.time()- self.last_update_time)
-        if time_till > 0.0001:
+        next_update = self.last_update_time + self.update_period
+        time_till = time.time()- next_update
+        if time_till > 0.001 and self.last_update_time is not 0:
             print(f"Overrun on {self.name}: {time_till:06f}s over target")
             
         if time_till >= 0:
             #set to zero if disabled  
             if self.enabled:
-                modulated_array = self.mod.sin_interp(motor_data)
+                modulated_array = self.mod.sin_interp(self.vrc_board.collider_values)
             else: 
                 modulated_array = [float(0)] * 32
                 
             # convert, compile, and send
             int_array = self.mod.float_to_int16(modulated_array)
+            print(f"Is enabled: {self.enabled}")
+            print(modulated_array)
+            print(int_array)
             hex_string = self._compile_array(int_array)  
             self.client.send_message("/h", hex_string) # Send update over OSC
             
             self.last_update_time = time.time()
         
-            
-    def set_vrc_data(self, contact_values: list[float]):
-        """Callback to set float values to be sent on next tick
-
-        Args:
-            address (_type_): _description_
-            args (_type_): _description_
-        """
-        self.conta
                     
-    def _compile_array(int_array: list[int]) -> str:
+    def _compile_array(self, int_array: list[int]) -> str:
         """Compile Int array into byte string to send to device
 
         Args:

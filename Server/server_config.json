@@ -4,11 +4,12 @@
         "own_ip": "192.168.1.104"
     },
     "vest": {
+        "vrc_groups": [["Front", 16], ["Back", 16]],
         "motor_limits": {
                         "max":1.0,
                         "min":0.0
                         },
         "number_motors": 32,
-        "serv_rate": 350
+        "serv_rate": 1
     }
 }

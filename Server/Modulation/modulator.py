@@ -5,10 +5,10 @@ from random import randint
 class BoardModulator:
     def __init__(self, 
                  frequency:int = 10, 
-                 modulation_dist:float = 1.0, 
+                 modulation_dist:float = 0.2, 
                  modulation_offset: float | int = randint(0, 32),
                  motor_min: float = 0,
-                 motor_max: float = 0,
+                 motor_max: float = 1,
                  vrc_percentage: float = 1,
                  ):
         """Handles modulation across time for waveform definitions
@@ -26,25 +26,18 @@ class BoardModulator:
         
         self.modulation_offset = modulation_offset
         
-        self.omega = np.pi * frequency
+        self.omega = 2*np.pi * frequency
         
     
-    def sin_interp(self, raw:float | list[float], time_s: float = None, just_sin = False) -> float | list[float]:
-        if not time_s:    
-            time_s = time() + self.modulation_offset
-         
-        if isinstance(raw, list):
-            raw = np.array(raw)
-        
+    def sin_interp(self, raw: float | np.ndarray[np.float64], time_s: float = time(), just_sin = False) -> float | list[float]:        
         #find value to scale by
-        sin_result = (np.sin(self.omega * time_s)+1)*0.5
-            
-        return raw * (1 - (self.modulation_dist) * (1 - sin_result))
+        return raw * (1 - (self.modulation_dist) * (1 - (np.sin(self.omega * time_s)+1)*0.5))
     
     def float_to_int16(self, raw: list[float]):
         int_array = [int(0)] * 32
         for index, element in enumerate(raw):
             scaled_val = (element * (self.motor_max - self.motor_min) + self.motor_min) * self.vrc_percentage
+            print(scaled_val)
             int_array[index] = int(scaled_val * 4096)
             
         return int_array
@@ -74,7 +67,7 @@ def _time_functions():
 
     total= 0
     start_time = time()
-    raw_signal = [0.5] * 32
+    raw_signal = np.array([0.5] * 32)
     for _ in range(100000): 
         mod.sin_interp(raw_signal, start_time, True)
         total += time() - start_time
@@ -85,9 +78,8 @@ def _time_functions():
     
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
-    
-    #_time_functions()
-    
+
+    _time_functions()
     
     # Plot Function
     frequencies = [5, 10, 20]
