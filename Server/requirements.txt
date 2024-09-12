@@ -1,2 +1,4 @@
 python-osc
+zeroconf
+psutil
 numpy
