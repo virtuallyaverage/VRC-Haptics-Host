@@ -1,4 +1,4 @@
-class maskSetup:
+class maskSetup: #mask depricated
     def __init__(self):
         pass
     

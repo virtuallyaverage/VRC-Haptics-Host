@@ -31,7 +31,6 @@ class haptic_devices:
             device_info['port'],
             update_rate = self.configs[name]['serv_rate'],
             announce_disc = True,
-            enabled= True,
             vrc_groups=self.configs[name]['vrc_groups'],
             )
         

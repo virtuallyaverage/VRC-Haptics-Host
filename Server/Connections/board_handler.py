@@ -5,6 +5,9 @@ from pythonosc.udp_client import SimpleUDPClient
 from pythonosc.dispatcher import Dispatcher
 from pythonosc.osc_server import BlockingOSCUDPServer
 
+from Utils.debounce import debounce_class as debounceC
+from Utils.debounce import debounce as debounce
+
 #wrap locals in check to allow file testing
 if __name__ != "__main__":
     from Modulation.modulator import BoardModulator  
@@ -39,7 +42,6 @@ class board_handler:
                  sending_port: int, 
                  update_rate: int,
                  announce_disc: bool,
-                 enabled: bool,
                  vrc_groups: list[tuple[str, int]],
                  ) -> None:
         
@@ -50,7 +52,6 @@ class board_handler:
         self.send_port = sending_port
         self.name = name
         self.announce_disc = announce_disc
-        self.enabled = enabled
         self.vrc_groups = vrc_groups
         self.num_motors = sum([ num for _, num in vrc_groups])
         
@@ -64,8 +65,12 @@ class board_handler:
         self.last_htrbt = 0 # not been pinged yet
         
         # Instantiate sub-classes
-        self.mod = BoardModulator(10, 0.5)
         self.vrc_board = VRCBoardHandler(collider_groups=vrc_groups)
+        self.mod = BoardModulator(
+            self.vrc_board.get_intensity,
+            self.vrc_board.get_mod_freq,
+            self.vrc_board.get_mod_dist,
+            )
             
         # Create receiving server for this device
         self.dispatcher = Dispatcher()
@@ -76,40 +81,53 @@ class board_handler:
         
         # create sending client for this device
         self.client = SimpleUDPClient(self.board_ip, self.send_port)
-        self.client.send_message('/ping', self.recv_port) # send ping after server already set up
+        self._ping_board()
         
     def tick(self) -> None:
         
         if self.last_htrbt != 0:
             diff = time.time() - self.last_htrbt 
-            if diff > 1.5:
-                self.state = 'EXPIRED'
-                if (self.announce_disc and not self.was_announced):
-                    print(f"{self.name} Disconnected.")
-                    self.was_announced = True     
+            if diff > 3.0:
+                self._ping_board()
+                if self.state != 'EXPIRED' and self.state != 'DISCONNECTED':
+                    self.state = 'EXPIRED'
+                    if (self.announce_disc and not self.was_announced):
+                        print(diff)
+                        print(f"{self.name} Disconnected.")
+                        self.was_announced = True    
+                    
+        if (self.state == 'EXPIRED'):
+            self.state = 'DISCONNECTED'
         
-        next_update = self.last_update_time + self.update_period
-        time_till = time.time()- next_update
-        if time_till > 0.001 and self.last_update_time is not 0:
-            print(f"Overrun on {self.name}: {time_till:06f}s over target")
-            
-        if time_till >= 0:
-            #set to zero if disabled  
-            if self.enabled:
-                modulated_array = self.mod.sin_interp(self.vrc_board.collider_values)
-            else: 
-                modulated_array = [float(0)] * 32
+        if self.state != 'EXPIRED' and self.state != 'DISCONNECTED':
+            next_update = self.last_update_time + self.update_period
+            time_till = time.time()- next_update
+            if time_till > 0.001 and self.last_update_time != 0:
+                print(f"Overrun on {self.name}: {time_till:06f}s over target")
                 
-            # convert, compile, and send
-            int_array = self.mod.float_to_int16(modulated_array)
-            print(f"Is enabled: {self.enabled}")
-            print(modulated_array)
-            print(int_array)
-            hex_string = self._compile_array(int_array)  
-            self.client.send_message("/h", hex_string) # Send update over OSC
-            
-            self.last_update_time = time.time()
+            self.send_packet() #function will be debounced to desired rate
         
+    @debounceC(lambda self: self.update_period)      
+    def send_packet(self) -> None:
+        #set to zero if disabled  
+        if self.vrc_board.motors_enabled:
+            modulated_array = self.mod.sin_interp(self.vrc_board.collider_values)
+        else: 
+            modulated_array = [float(0)] * 32
+            
+        # convert, compile, and send
+        int_array = self.mod.float_to_int16(modulated_array)
+        print(f"Is enabled: {self.vrc_board.motors_enabled}")
+        print(int_array)
+        hex_string = self._compile_array(int_array)  
+        self.client.send_message("/h", hex_string) # Send update over OSC
+        
+        self.last_update_time = time.time()
+        
+        
+    @debounce(1)   
+    def _ping_board(self) -> None:
+        self.client.send_message('/ping', self.recv_port) # send ping after server already set up
                     
     def _compile_array(self, int_array: list[int]) -> str:
         """Compile Int array into byte string to send to device
@@ -129,9 +147,13 @@ class board_handler:
         return hex_string
 
     def _handle_hrtbt(self, address, *args):
-        self.last_htrbt = time.time()
-        self.state = 'CONNECTED'
+        if (self.was_announced):
+            print(f"{self.name} Reconnected.")
+            self._ping_board() #in case board was restarted
+            
+        self.state = 'CONNECTED'  
         self.was_announced = False
+        self.last_htrbt = time.time()
         
     def _handle_ping(self, address, *args):
         self.last_htrbt = time.time() + 5 #give five second leeway for connection to get setup
@@ -154,7 +176,6 @@ if __name__ == "__main__":
         sending_port= 1025,
         update_rate= 350,
         announce_disc= True,
-        enabled= True,
         vrc_groups=[("Front", 16), ("Back", 16)],
     )
     print(handler)

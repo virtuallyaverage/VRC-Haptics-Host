@@ -60,6 +60,8 @@ class VRCBoardHandler:
         
         # float parameters
         self.intensity_scale = 1
+        self.mod_dist = 0.2
+        self.mod_freq = 0.2
         
         self.num_colliders = 0
         
@@ -76,6 +78,16 @@ class VRCBoardHandler:
     
     def get_parameter_addresses(self) -> list[str]:
         return self.parameter_addresses
+    
+    #callbacks for variables
+    def get_intensity(self) -> float:
+        return self.intensity_scale
+    
+    def get_mod_dist(self) -> float:
+        return self.mod_dist
+    
+    def get_mod_freq(self) -> float:
+        return self.mod_freq * 10
     
     def vrc_callback(self, address, *args):
         print(f"VRC callback called:{address}: Args:{args}")
@@ -136,8 +148,9 @@ class VRCBoardHandler:
         #if anything is added here make sure to intiate it to a default value in the __init__ function
         parameter_addresses = {
             f'{base_parameter}Enable': (bool, 'motors_enabled'),
-            f'{base_parameter}Visuals': (bool, 'visuals_enabled'),
             f'{base_parameter}Intensity': (float, 'intensity_scale'),
+            f'{base_parameter}Mod_Freq': (float, 'mod_freq'),
+            f'{base_parameter}Modulation': (float, 'mod_dist'),
         }
         
         return parameter_addresses

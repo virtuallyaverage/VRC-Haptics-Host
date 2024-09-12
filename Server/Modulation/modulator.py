@@ -1,15 +1,15 @@
-from time import time
+from time import time, time_ns
 import numpy as np
 from random import randint
 
 class BoardModulator:
     def __init__(self, 
-                 frequency:int = 10, 
-                 modulation_dist:float = 0.2, 
+                 intensity,
+                 frequency, 
+                 distance, 
                  modulation_offset: float | int = randint(0, 32),
                  motor_min: float = 0,
                  motor_max: float = 1,
-                 vrc_percentage: float = 1,
                  ):
         """Handles modulation across time for waveform definitions
 
@@ -17,41 +17,46 @@ class BoardModulator:
             frequency (int, optional): [Hz] frequency that the modulation will occur at. Defaults to 10.
             mod_dist (float, optional): percent of the incoming signal to modulate (keep some active signal). Defaults to 1.0.
         """
-        self.modulation_dist = modulation_dist
-        self.frequency = frequency
-        
+        self.distance = distance
+        self.frequency = frequency # is prescaled to hz (vrc_handler.py: get_mod_freq)
+        self.intensity = intensity
         self.motor_min = motor_min
         self.motor_max = motor_max
-        self.vrc_percentage = vrc_percentage
+        
         
         self.modulation_offset = modulation_offset
         
-        self.omega = 2*np.pi * frequency
-        
+        self.omega = 2*np.pi / frequency()
     
-    def sin_interp(self, raw: float | np.ndarray[np.float64], time_s: float = time(), just_sin = False) -> float | list[float]:        
+    def sin_interp(self, raw: float | np.ndarray[np.float64], time_s: float = None, just_sin = False) -> float | list[float]:        
+        self.omega = 2*np.pi * self.frequency()
+        if not time_s:
+            time_s = time()
         #find value to scale by
-        return raw * (1 - (self.modulation_dist) * (1 - (np.sin(self.omega * time_s)+1)*0.5))
+        mult = np.sin(self.omega* time_s)
+        return raw * (1 - (self.distance()) * (1 - (mult+1)*0.5))
     
     def float_to_int16(self, raw: list[float]):
         int_array = [int(0)] * 32
         for index, element in enumerate(raw):
-            scaled_val = (element * (self.motor_max - self.motor_min) + self.motor_min) * self.vrc_percentage
-            print(scaled_val)
-            int_array[index] = int(scaled_val * 4096)
+            scaled_val = (element * (self.motor_max - self.motor_min) + self.motor_min) * self.intensity()
+            int_array[index] = int(scaled_val * 4095)
             
         return int_array
     
-    
-    def set_mod_amount(self, var: float):
-        self.mod_dist = var
-        
-    def set_mod_frequency(self, freq: int):
-        self.frequency = freq
-        self.omega = np.pi * freq
-    
 def _time_functions():
-    mod = BoardModulator()
+    def test_freq(): 
+        return 1
+    def test_intensity(): 
+        return 1
+    def test_mod(): 
+        return 1
+    
+    mod = BoardModulator(
+        frequency=test_freq,
+        intensity=test_intensity,
+        distance = test_mod
+    )
     
     # Time Function
     # Measure time for 1000 calls with a single float
@@ -63,27 +68,38 @@ def _time_functions():
         total += time() - start_time
         start_time = time()
         
-    print(f"Average Call Time for Single Float: {(total/100):.6f} ms")
+    print(f"Average Call Time for Single Float: {(total/100):.6f} ms") # dividing by 100 rather than 100k -> ms
 
     total= 0
-    start_time = time()
     raw_signal = np.array([0.5] * 32)
+    start_time = time()
     for _ in range(100000): 
         mod.sin_interp(raw_signal, start_time, True)
         total += time() - start_time
         start_time = time()
         
     print(f"Average Call Time for 32 Floats: {(total/100):.6f} ms")
-    
+
+
     
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
     _time_functions()
     
+    # Example functions for frequency, distance, and intensity
+    def frequency_func():
+        return 1
+
+    def distance_func():
+        return 0
+
+    def intensity_func():
+        return 1.0 
+
     # Plot Function
-    frequencies = [5, 10, 20]
-    mod_dists = [0.2, 0.5, 1.0]
+    frequencies = [frequency_func, lambda: 5, lambda: 10]  # Example frequency functions
+    mod_dists = [distance_func, lambda: 0.2, lambda: 0.4]   # Example distance functions
     raw_signal = 1.0
     time_s = np.linspace(0, 2, 1000)  # 2 seconds, 1000 samples
 
@@ -93,11 +109,11 @@ if __name__ == "__main__":
     for i, frequency in enumerate(frequencies):
         plt.subplot(3, 1, i + 1)
         for mod_dist in mod_dists:
-            mod = BoardModulator(frequency=frequency, modulation_dist=mod_dist)
+            mod = BoardModulator(intensity=intensity_func, frequency=frequency, distance=mod_dist)
             modulated_signal = [mod.sin_interp(raw_signal, t, True) for t in time_s]
-            plt.plot(time_s, modulated_signal, label=f"Mod Dist: {mod_dist}")
+            plt.plot(time_s, modulated_signal, label=f"Mod Dist: {mod_dist()}")
 
-        plt.title(f"Frequency: {frequency} Hz")
+        plt.title(f"Frequency: {frequency()} Hz")
         plt.xlabel("Time (s)")
         plt.ylabel("Amplitude")
         plt.ylim(y_limits)
