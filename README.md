@@ -8,6 +8,7 @@ A server and prefab combo prioritizing practical usability and easy customizatio
  - **Unlimited Play Time\***
  - **Comfort with custom fitted arrangement**
  - **Eliminate Bhaptics bugs**
+ - **Automatic Netowork Discovery**
 
  *(Support for any Bhaptics equipped avatar coming soon)* 
  
