@@ -77,12 +77,12 @@ My time for this project is very limited at the moment since I work 60-70hrs a w
 There are ALOT of areas that need improvement immediately. The current codebase is a wreck, there is no proper scope management, and I kind of scattered functions willy-nilly during initial developement. 
  
 ### Urgent-ish needs:
-   - [ ] Major Refactoring
-      - [ ] split out functions to their own modules
-      - [ ] implement proper scope management
-      - [ ] document functions/objects
+   - [x] Major Refactoring
+      - [x] split out functions to their own modules
+      - [x] implement proper scope management
+      - [x] document functions/objects
    -  [x] Start project docs 
-      - [ ] The goal is to have an actual wiki eventuallys
+      - [ ] The goal is to have an actual wiki eventually
    -  [x] Create Platform.io project
       - [ ] Same documentation standards as the server. 
    - [ ] Streamline Setup 
@@ -103,5 +103,5 @@ Contribution is more than appreciated, but please keep it close/aligned with the
     - I would prefer having slightly less performant code if it is easily understandable. 
     - Please avoid ambigous variable naming (temp, i, j, etc.)
 
-If the project takes off than rules and goals can change as needed. These are just my starting out thoughts.
+If the project takes off then rules and goals can change as needed.
 
