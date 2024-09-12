@@ -37,7 +37,7 @@ discord:@is_average
 
 **Installation:**
  - Extract repository into desired install folder.
- - Open a powershell and run: `cd "{Insert file path to unzipped folder}/Server"`
+ - Open a powershell and run: `cd "{Insert file path to unzipped folder}/VRC-Haptics-Host/Server"`
  - Install requirements by running: `pip install -r "requirements.txt"`
 
 Finally, right-click on the `Haptics Server SEND ME TO DESKTOP.lnk` file and select the `"SEND TO"` menu and select `"Desktop"`. This should put the file on the desktop which will start the server when ran. It should also be available from the windows search bar by searching "haptics" or something similar after a computer restart.
