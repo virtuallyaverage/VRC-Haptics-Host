@@ -8,6 +8,7 @@ A server and prefab combo prioritizing practical usability and easy customizatio
  - **Unlimited Play Time\***
  - **Comfort with custom fitted arrangement**
  - **Eliminate Bhaptics bugs**
+ - **Automatic Netowork Discovery**
 
  *(Support for any Bhaptics equipped avatar coming soon)* 
  
@@ -36,7 +37,7 @@ discord:@is_average
 
 **Installation:**
  - Extract repository into desired install folder.
- - Open a powershell and run: `cd "{Insert file path to unzipped folder}/Server"`
+ - Open a powershell and run: `cd "{Insert file path to unzipped folder}/VRC-Haptics-Host/Server"`
  - Install requirements by running: `pip install -r "requirements.txt"`
 
 Finally, right-click on the `Haptics Server SEND ME TO DESKTOP.lnk` file and select the `"SEND TO"` menu and select `"Desktop"`. This should put the file on the desktop which will start the server when ran. It should also be available from the windows search bar by searching "haptics" or something similar after a computer restart.
@@ -76,12 +77,12 @@ My time for this project is very limited at the moment since I work 60-70hrs a w
 There are ALOT of areas that need improvement immediately. The current codebase is a wreck, there is no proper scope management, and I kind of scattered functions willy-nilly during initial developement. 
  
 ### Urgent-ish needs:
-   - [ ] Major Refactoring
-      - [ ] split out functions to their own modules
-      - [ ] implement proper scope management
-      - [ ] document functions/objects
+   - [x] Major Refactoring
+      - [x] split out functions to their own modules
+      - [x] implement proper scope management
+      - [x] document functions/objects
    -  [x] Start project docs 
-      - [ ] The goal is to have an actual wiki eventuallys
+      - [ ] The goal is to have an actual wiki eventually
    -  [x] Create Platform.io project
       - [ ] Same documentation standards as the server. 
    - [ ] Streamline Setup 
@@ -102,5 +103,5 @@ Contribution is more than appreciated, but please keep it close/aligned with the
     - I would prefer having slightly less performant code if it is easily understandable. 
     - Please avoid ambigous variable naming (temp, i, j, etc.)
 
-If the project takes off than rules and goals can change as needed. These are just my starting out thoughts.
+If the project takes off then rules and goals can change as needed.
 
