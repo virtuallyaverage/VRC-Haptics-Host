@@ -2,7 +2,7 @@
 A server and prefab combo prioritizing practical usability and easy customization.
 ## Features
  - **In-game haptic configuration**
- - **Imperceptable game -> haptics latency**
+ - **350hz Motor Update Rate**
  - **Cheap Hardware (~$50USD)**
  - **One-Click Avi Install** 
  - **Unlimited Play Time\***
