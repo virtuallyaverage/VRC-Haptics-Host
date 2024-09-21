@@ -10,35 +10,22 @@ with open('server_config.json', 'r') as config:       #Reads Config Json and put
     full_config = json.load(config)
     print(full_config)
 
-vest_config = full_config['vest']
-server_config = full_config['server']
-
-motor_limits = vest_config['motor_limits']
-total_motors = vest_config['number_motors']    #Total number of motors!
-
-print(f"Motor Limits: {motor_limits["min"]*100}% to {motor_limits["max"]*100}%")
-print(f"Number of motors: {total_motors}")
+devices = haptic_devices(full_config, full_config['server']['own_ip'])
 
 
-devices = haptic_devices(full_config, server_config['own_ip'])
-
-
-async def buffer():
-    """Infinite loop that pushes the buffered_array to the vest at the serve_rate
+def buffer():
+    """tick each of the devices registered and handle osc communciation
     """
 
     while True:
         devices.tick() 
         
 
-async def init_main():
-        
-    await buffer()  # Enter main loop of program
         
 
 if __name__ == "__main__":
     try:
-        asyncio.run(init_main())
+        buffer()
         
     except KeyboardInterrupt as e:
         print("Closing")

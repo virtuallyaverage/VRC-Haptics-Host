@@ -32,6 +32,7 @@ class haptic_devices:
             update_rate = self.configs[name]['serv_rate'],
             announce_disc = True,
             vrc_groups=self.configs[name]['vrc_groups'],
+            
             )
         
         self.vrc.register_callback(self.handlers[name].vrc_board.vrc_callback)
@@ -41,7 +42,7 @@ class haptic_devices:
 
     def tick(self):
         # tick each handler
-        for handler in self.handlers.keys():
+        for handler in list(self.handlers.keys()):
             self.handlers[handler].tick()
     
     def _get_port(self):
@@ -49,7 +50,7 @@ class haptic_devices:
         return self.current_port
     
     def close(self):
-        for handler in self.handlers.keys():
+        for handler in  list(self.handlers.keys()):
             self.handlers[handler].close()
         self.vrc.close()
         self.mdns.close_browser()

@@ -90,7 +90,6 @@ class VRCBoardHandler:
         return self.mod_freq * 10
     
     def vrc_callback(self, address, *args):
-        print(f"VRC callback called:{address}: Args:{args}")
         """Take general address adn see if we need to update our variables
 
         Args:

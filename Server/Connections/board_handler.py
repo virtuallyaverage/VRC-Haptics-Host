@@ -70,6 +70,7 @@ class board_handler:
             self.vrc_board.get_intensity,
             self.vrc_board.get_mod_freq,
             self.vrc_board.get_mod_dist,
+            self.num_motors,
             )
             
         # Create receiving server for this device
@@ -88,13 +89,14 @@ class board_handler:
         if self.last_htrbt != 0:
             diff = time.time() - self.last_htrbt 
             if diff > 3.0:
-                self._ping_board()
+                self._ping_board() #debounced, we can keep pinging as long a heartbeat is out of date
+                
                 if self.state != 'EXPIRED' and self.state != 'DISCONNECTED':
                     self.state = 'EXPIRED'
                     if (self.announce_disc and not self.was_announced):
                         print(f"{self.name} Disconnected.")
-                        self.was_announced = True    
-                    
+                        self.was_announced = True   
+                        
         if (self.state == 'EXPIRED'):
             self.state = 'DISCONNECTED'
         
@@ -105,6 +107,7 @@ class board_handler:
                 print(f"Overrun on {self.name}: {time_till:06f}s over target")
                 
             self.send_packet() #function will be debounced to desired rate
+            self.last_update_time = time.time()
         
     @debounceC(lambda self: self.update_period)      
     def send_packet(self) -> None:
@@ -112,17 +115,14 @@ class board_handler:
         if self.vrc_board.motors_enabled:
             modulated_array = self.mod.sin_interp(self.vrc_board.collider_values)
         else: 
-            modulated_array = [float(0)] * 32
+            modulated_array = [float(0)] * self.num_motors
             
         # convert, compile, and send
         int_array = self.mod.float_to_int16(modulated_array)
-        hex_string = self._compile_array(int_array)  
+        hex_string = self._compile_array(int_array)
         self.client.send_message("/h", hex_string) # Send update over OSC
         
-        self.last_update_time = time.time()
-        
-        
-    @debounce(1)   
+    @debounce(1)
     def _ping_board(self) -> None:
         self.client.send_message('/ping', self.recv_port) # send ping after server already set up
                     
@@ -146,7 +146,6 @@ class board_handler:
     def _handle_hrtbt(self, address, *args):
         if (self.was_announced):
             print(f"{self.name} Reconnected.")
-            self._ping_board() #in case board was restarted
             
         self.state = 'CONNECTED'  
         self.was_announced = False

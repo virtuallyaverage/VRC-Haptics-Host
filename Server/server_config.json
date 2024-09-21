@@ -11,5 +11,14 @@
                         },
         "number_motors": 32,
         "serv_rate": 360
+    },
+    "head": {
+        "vrc_groups": [["Head", 8]],
+        "motor_limits": {
+                        "max":1.0,
+                        "min":0.0
+                        },
+        "number_motors": 8,
+        "serv_rate":350
     }
 }

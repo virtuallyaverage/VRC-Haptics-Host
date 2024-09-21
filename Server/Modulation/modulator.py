@@ -7,6 +7,7 @@ class BoardModulator:
                  intensity,
                  frequency, 
                  distance, 
+                 num_motors: int,
                  modulation_offset: float | int = randint(0, 32),
                  motor_min: float = 0,
                  motor_max: float = 1,
@@ -22,7 +23,7 @@ class BoardModulator:
         self.intensity = intensity
         self.motor_min = motor_min
         self.motor_max = motor_max
-        
+        self.num_motors = num_motors
         
         self.modulation_offset = modulation_offset
         
@@ -37,7 +38,7 @@ class BoardModulator:
         return raw * (1 - (self.distance()) * (1 - (mult+1)*0.5))
     
     def float_to_int16(self, raw: list[float]):
-        int_array = [int(0)] * 32
+        int_array = [int(0)] * self.num_motors
         for index, element in enumerate(raw):
             scaled_val = (element * (self.motor_max - self.motor_min) + self.motor_min) * self.intensity()
             int_array[index] = int(scaled_val * 4095)
