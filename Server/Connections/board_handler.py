@@ -43,6 +43,7 @@ class board_handler:
                  update_rate: int,
                  announce_disc: bool,
                  vrc_groups: list[tuple[str, int]],
+                 timeout_delay: float,
                  ) -> None:
         
         # set class variables
@@ -54,10 +55,12 @@ class board_handler:
         self.announce_disc = announce_disc
         self.vrc_groups = vrc_groups
         self.num_motors = sum([ num for _, num in vrc_groups])
+        self.timeout_delay = timeout_delay
         
         #state manager setup
         self.state = 'NEW'
         self.was_announced = False
+        self.should_delete = False
         
         #frequency setup
         self.update_period = 1/update_rate
@@ -88,14 +91,18 @@ class board_handler:
         
         if self.last_htrbt != 0:
             diff = time.time() - self.last_htrbt 
-            if diff > 3.0:
-                self._ping_board() #debounced, we can keep pinging as long a heartbeat is out of date
+            if diff > 3.0 and diff < self.timeout_delay:
+                self._ping_board() #debounced, we can keep pinging as long a heartbeat is expired
+                
                 
                 if self.state != 'EXPIRED' and self.state != 'DISCONNECTED':
                     self.state = 'EXPIRED'
                     if (self.announce_disc and not self.was_announced):
                         print(f"{self.name} Disconnected.")
                         self.was_announced = True   
+            
+            elif diff > self.timeout_delay: #delete class if timed out for long enough
+                self.should_delete = True
                         
         if (self.state == 'EXPIRED'):
             self.state = 'DISCONNECTED'
@@ -103,8 +110,8 @@ class board_handler:
         if self.state != 'EXPIRED' and self.state != 'DISCONNECTED':
             next_update = self.last_update_time + self.update_period
             time_till = time.time()- next_update
-            if time_till > 0.001 and self.last_update_time != 0:
-                print(f"Overrun on {self.name}: {time_till:06f}s over target")
+            #if time_till > 0.001 and self.last_update_time != 0:
+                #print(f"Overrun on {self.name}: {time_till:06f}s over target")
                 
             self.send_packet() #function will be debounced to desired rate
             self.last_update_time = time.time()
@@ -152,6 +159,8 @@ class board_handler:
         self.last_htrbt = time.time()
         
     def _handle_ping(self, address, *args):
+        print(address)
+        print(args)
         self.last_htrbt = time.time() + 5 #give five second leeway for connection to get setup
         
 

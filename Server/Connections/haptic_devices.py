@@ -4,6 +4,8 @@ from Connections.vrc_handler import VRCConnnectionHandler
 
 from socket import inet_ntoa
 
+from zeroconf import Zeroconf
+
 class haptic_devices:
     def __init__(self, configs, own_ip) -> None:
         self.devices = {}
@@ -17,11 +19,35 @@ class haptic_devices:
 
         # Start mDNS scanning
         self.mdns = MDNSHandler()
-        self.mdns.subscribe(self._device_detected)
+        self.mdns.subscribe(self._device_detected, self._device_removed, self._device_changed)
 
     def _device_detected(self, name, device_info):
-        self.devices[name] = device_info
         print(f"Connecting to: {name} at ip: {inet_ntoa(device_info['ip'])}")
+        self._create_device(name, device_info)
+        
+    def _device_removed(self, name):
+        print(f"Device {name} removed")
+        self.delete_device(name)
+        
+    def _device_changed(self, info, name):
+        #name of device deleted
+        name = info.server.split('.')[0]
+        
+        #delete old device
+        self.delete_device(name)
+        
+        #get updated settings
+        new_device = {
+            'ip': info.addresses[0],
+            'port': 1027,
+            'name': info.name
+        }
+        
+        # Start so fresh so clean
+        self._create_device(name, new_device)
+            
+    def _create_device(self, name, device_info):
+        self.devices[name] = device_info
         
         self.handlers[name] = board_handler(
             inet_ntoa(device_info['ip']), 
@@ -32,18 +58,23 @@ class haptic_devices:
             update_rate = self.configs[name]['serv_rate'],
             announce_disc = True,
             vrc_groups=self.configs[name]['vrc_groups'],
-            
+            timeout_delay=self.configs['server']['timeout_delay'],
             )
         
         self.vrc.register_callback(self.handlers[name].vrc_board.vrc_callback)
+
+    def delete_device(self, name: str):
+        self.handlers[name].close()
+        self.devices.pop(name)
+        self.handlers.pop(name)
         
     def is_connected(self, name) -> bool:
         return self.devices[name].state == 'CONNECTED'
 
     def tick(self):
         # tick each handler
-        for handler in list(self.handlers.keys()):
-            self.handlers[handler].tick()
+        for handler_name in list(self.handlers.keys()):
+            self.handlers[handler_name].tick()
     
     def _get_port(self):
         self.current_port += 1
