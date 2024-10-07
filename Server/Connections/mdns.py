@@ -53,7 +53,7 @@ class MDNSHandler():
             
 
     def _on_device_changed (self, info, name): 
-        for callback in self._on_device_changed:
+        for callback in self._change_callbacks:
             callback(info, name)
         
     def close_browser(self) -> None:

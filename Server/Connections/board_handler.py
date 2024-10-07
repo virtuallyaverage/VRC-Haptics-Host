@@ -44,6 +44,7 @@ class board_handler:
                  announce_disc: bool,
                  vrc_groups: list[tuple[str, int]],
                  timeout_delay: float,
+                 motor_limits: float, 
                  ) -> None:
         
         # set class variables
@@ -56,6 +57,8 @@ class board_handler:
         self.vrc_groups = vrc_groups
         self.num_motors = sum([ num for _, num in vrc_groups])
         self.timeout_delay = timeout_delay
+        self.motor_limits = motor_limits
+        self.motor_range = motor_limits['max']- motor_limits['min']
         
         #state manager setup
         self.state = 'NEW'
@@ -66,6 +69,9 @@ class board_handler:
         self.update_period = 1/update_rate
         self.last_update_time = 0
         self.last_htrbt = 0 # not been pinged yet
+        
+        #statically allocate empty array
+        self.empty_array = [float(0)] * self.num_motors
         
         # Instantiate sub-classes
         self.vrc_board = VRCBoardHandler(collider_groups=vrc_groups)
@@ -121,8 +127,10 @@ class board_handler:
         #set to zero if disabled  
         if self.vrc_board.motors_enabled:
             modulated_array = self.mod.sin_interp(self.vrc_board.collider_values)
+            #scale to motor_limits in the server_config.json
+            modulated_array = modulated_array * self.motor_range + self.motor_limits['min']
         else: 
-            modulated_array = [float(0)] * self.num_motors
+            modulated_array = self.empty_array
             
         # convert, compile, and send
         int_array = self.mod.float_to_int16(modulated_array)

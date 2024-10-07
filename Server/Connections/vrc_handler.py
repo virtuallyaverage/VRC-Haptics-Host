@@ -13,6 +13,7 @@ class VRCConnnectionHandler:
         self.vrc_ip = vrc_ip
         
         self.registered_callbacks = []
+        self.address_dict = {'':[0]} # {'address': [callbacks]}
         
         self.server = None
         
@@ -22,8 +23,23 @@ class VRCConnnectionHandler:
         self.startServer()
         
     def handle_address(self, address: str, *args):
-        for callback in self.registered_callbacks:
-            callback(address, args)
+        
+        try:
+            callbacks = self.address_dict[address]
+            if callbacks:
+                for callback in callbacks:
+                    callback(address, *args)
+        except KeyError as e: #if key not found we haven't registered a callback for it yet
+            print(e)
+            
+    
+    def sub_to_address(self, addresses: list[str], callback: callable) -> None:
+        for address in addresses:
+            #if empty address we don't append
+            try:
+                self.address_dict[address].append(callback)
+            except KeyError:
+                self.address_dict[address] = [callback]     
             
     def register_callback(self, callback):
         self.registered_callbacks.append(callback)
@@ -90,7 +106,7 @@ class VRCBoardHandler:
         return self.mod_freq * 10
     
     def vrc_callback(self, address, *args):
-        """Take general address adn see if we need to update our variables
+        """Take general address and see if we need to update our variables
 
         Args:
             address (_type_): _description_
@@ -158,9 +174,46 @@ class VRCBoardHandler:
 
     
 if __name__ == "__main__":
+    import time
+    import random
+    import statistics
+    
+    messages_max = 5000
+    
     connection = VRCConnnectionHandler()
-    board = VRCBoardHandler([("Front", 16), ("Back", 16)])
-    
-    connection.close()
-    
+
+    latency =[]
+    def callback_func(address: str, *args):
+        now = time.time_ns()
+        latency[-1] = now - latency[-1]
+
+    addresses = [f"/avatar/parameters/address_{i}" for i in range(50)]
+    for address in addresses:
+        num_callbacks = 5
+        for _ in range(num_callbacks):
+            connection.sub_to_address([address], callback_func)
+
+    stop_event = threading.Event()
+
+    def simulate_messages():
+        while not stop_event.is_set():
+            for address in addresses:
+                latency.append(time.time_ns())
+                connection.handle_address(address, time.time_ns())
+            time.sleep(0.1)
+
+    simulation_thread = threading.Thread(target=simulate_messages)
+    simulation_thread.daemon = True
+    simulation_thread.start()
+
+    try:
+        while simulation_thread.is_alive() and len(latency) < messages_max:
+            simulation_thread.join(1)
+            
+        print(f"Average Latency over {messages_max} messages: {statistics.fmean(latency)}ns")
+        raise KeyboardInterrupt("We done")
+    except KeyboardInterrupt:
+        print("Ctrl+C pressed, shutting down...")
+        stop_event.set()
+        connection.close()
 

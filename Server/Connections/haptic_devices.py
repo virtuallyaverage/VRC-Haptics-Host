@@ -4,8 +4,6 @@ from Connections.vrc_handler import VRCConnnectionHandler
 
 from socket import inet_ntoa
 
-from zeroconf import Zeroconf
-
 class haptic_devices:
     def __init__(self, configs, own_ip) -> None:
         self.devices = {}
@@ -21,15 +19,19 @@ class haptic_devices:
         self.mdns = MDNSHandler()
         self.mdns.subscribe(self._device_detected, self._device_removed, self._device_changed)
 
+    # Mdns Callback
     def _device_detected(self, name, device_info):
         print(f"Connecting to: {name} at ip: {inet_ntoa(device_info['ip'])}")
         self._create_device(name, device_info)
         
+    # Mdns Callback
     def _device_removed(self, name):
-        print(f"Device {name} removed")
+        print(f"Removing Device: {name}")
         self.delete_device(name)
         
+    # Mdns Callback
     def _device_changed(self, info, name):
+        print(f"Device {name} Changed")
         #name of device deleted
         name = info.server.split('.')[0]
         
@@ -59,20 +61,23 @@ class haptic_devices:
             announce_disc = True,
             vrc_groups=self.configs[name]['vrc_groups'],
             timeout_delay=self.configs['server']['timeout_delay'],
+            motor_limits=self.conifgs[name]['motor_limits'],
             )
         
         self.vrc.register_callback(self.handlers[name].vrc_board.vrc_callback)
 
     def delete_device(self, name: str):
+        print(f"Removing device: {name}")
         self.handlers[name].close()
-        self.devices.pop(name)
-        self.handlers.pop(name)
+        del self.devices[name]
+        self.handlers[name]
         
     def is_connected(self, name) -> bool:
         return self.devices[name].state == 'CONNECTED'
 
     def tick(self):
         # tick each handler
+        print(self.handlers.keys())
         for handler_name in list(self.handlers.keys()):
             self.handlers[handler_name].tick()
     

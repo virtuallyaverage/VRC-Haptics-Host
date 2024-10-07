@@ -15,7 +15,7 @@
     "head": {
         "vrc_groups": [["Head", 8]],
         "motor_limits": {
-                        "max":1.0,
+                        "max":0.5,
                         "min":0.0
                         },
         "number_motors": 8,

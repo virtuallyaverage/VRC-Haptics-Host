@@ -56,7 +56,8 @@ def _time_functions():
     mod = BoardModulator(
         frequency=test_freq,
         intensity=test_intensity,
-        distance = test_mod
+        distance = test_mod,
+        num_motors=32
     )
     
     # Time Function
@@ -110,7 +111,7 @@ if __name__ == "__main__":
     for i, frequency in enumerate(frequencies):
         plt.subplot(3, 1, i + 1)
         for mod_dist in mod_dists:
-            mod = BoardModulator(intensity=intensity_func, frequency=frequency, distance=mod_dist)
+            mod = BoardModulator(intensity=intensity_func, frequency=frequency, distance=mod_dist, num_motors=32)
             modulated_signal = [mod.sin_interp(raw_signal, t, True) for t in time_s]
             plt.plot(time_s, modulated_signal, label=f"Mod Dist: {mod_dist()}")
 
