@@ -49,6 +49,7 @@ class haptic_devices:
         self._create_device(name, new_device)
             
     def _create_device(self, name, device_info):
+        print(f"Creating device: {name}")
         self.devices[name] = device_info
         
         self.handlers[name] = board_handler(
@@ -61,25 +62,27 @@ class haptic_devices:
             announce_disc = True,
             vrc_groups=self.configs[name]['vrc_groups'],
             timeout_delay=self.configs['server']['timeout_delay'],
-            motor_limits=self.conifgs[name]['motor_limits'],
+            motor_limits=self.configs[name]['motor_limits'],
             )
         
-        self.vrc.register_callback(self.handlers[name].vrc_board.vrc_callback)
+        self.vrc.sub_to_address(self.handlers[name].vrc_board.param, self.handlers[name].vrc_board.vrc_callback)
 
     def delete_device(self, name: str):
         print(f"Removing device: {name}")
         self.handlers[name].close()
+        del self.handlers[name]
         del self.devices[name]
-        self.handlers[name]
         
     def is_connected(self, name) -> bool:
         return self.devices[name].state == 'CONNECTED'
 
     def tick(self):
         # tick each handler
-        print(self.handlers.keys())
-        for handler_name in list(self.handlers.keys()):
-            self.handlers[handler_name].tick()
+        try:
+            for handler_name in list(self.handlers.keys()):
+                self.handlers[handler_name].tick()
+        except KeyError: #means that no devices registered
+            pass
     
     def _get_port(self):
         self.current_port += 1

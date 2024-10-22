@@ -63,7 +63,7 @@ class board_handler:
         #state manager setup
         self.state = 'NEW'
         self.was_announced = False
-        self.should_delete = False
+        self.inactive = False
         
         #frequency setup
         self.update_period = 1/update_rate
@@ -94,21 +94,15 @@ class board_handler:
         self._ping_board()
         
     def tick(self) -> None:
-        
         if self.last_htrbt != 0:
             diff = time.time() - self.last_htrbt 
             if diff > 3.0 and diff < self.timeout_delay:
                 self._ping_board() #debounced, we can keep pinging as long a heartbeat is expired
-                
-                
                 if self.state != 'EXPIRED' and self.state != 'DISCONNECTED':
                     self.state = 'EXPIRED'
                     if (self.announce_disc and not self.was_announced):
                         print(f"{self.name} Disconnected.")
                         self.was_announced = True   
-            
-            elif diff > self.timeout_delay: #delete class if timed out for long enough
-                self.should_delete = True
                         
         if (self.state == 'EXPIRED'):
             self.state = 'DISCONNECTED'

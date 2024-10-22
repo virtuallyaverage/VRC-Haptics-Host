@@ -2,6 +2,7 @@ import threading
 import numpy as np
 from pythonosc.dispatcher import Dispatcher
 from pythonosc.osc_server import BlockingOSCUDPServer
+
 class VRCConnnectionHandler:
     def __init__(self,
                  vrc_ip: str = "127.0.0.1",
@@ -23,15 +24,13 @@ class VRCConnnectionHandler:
         self.startServer()
         
     def handle_address(self, address: str, *args):
-        
         try:
             callbacks = self.address_dict[address]
             if callbacks:
                 for callback in callbacks:
                     callback(address, *args)
         except KeyError as e: #if key not found we haven't registered a callback for it yet
-            print(e)
-            
+            pass
     
     def sub_to_address(self, addresses: list[str], callback: callable) -> None:
         for address in addresses:
@@ -40,9 +39,6 @@ class VRCConnnectionHandler:
                 self.address_dict[address].append(callback)
             except KeyError:
                 self.address_dict[address] = [callback]     
-            
-    def register_callback(self, callback):
-        self.registered_callbacks.append(callback)
         
     def remove_callback(self, callback) -> bool:
         if callback in self.registered_callbacks:
@@ -85,7 +81,7 @@ class VRCBoardHandler:
         self.collider_addresses = self._build_collider_addresses(collider_groups=collider_groups)
         self.parameter_addresses = self._build_parameter_addresses()
         
-        self.param = {**self.collider_addresses, **self.parameter_addresses}
+        self.param =  list(self.collider_addresses.keys()) + list(self.parameter_addresses.keys())
         
         self.collider_values = np.array([float(0)] * self.num_colliders)
         
@@ -112,7 +108,7 @@ class VRCBoardHandler:
             address (_type_): _description_
         """
         if (address in self.collider_addresses.keys()):
-            self.collider_values[self.collider_addresses[address]] = args[0][0]
+            self.collider_values[self.collider_addresses[address]] = args[0]
         elif (address in self.parameter_addresses.keys()):
             var_type, var_name = self.parameter_addresses[address]
         
@@ -121,6 +117,9 @@ class VRCBoardHandler:
                 print(var_name, "set to:", args[0][0])
             else:
                 print(f"wrong variable type at address: {address}, TYPE: {type(args[0][0])}, value: {args}")
+        else:
+            return
+        
         
     def _build_collider_addresses(self, 
                                    motor_prefix = 'h', 
@@ -132,7 +131,7 @@ class VRCBoardHandler:
             motor_prefix (_type_): prefix past the default avatar 
             collider_groups (_type_): groups and how many motors are in them
 
-        Returns:
+        Returns:m
             _type_: _description_
         """
 
@@ -148,7 +147,6 @@ class VRCBoardHandler:
                 
             colliders_seen += num_colliders
         self.num_colliders = colliders_seen
-
         return motor_colliders
      
     def _build_parameter_addresses(self,
@@ -167,7 +165,6 @@ class VRCBoardHandler:
             f'{base_parameter}Mod_Freq': (float, 'mod_freq'),
             f'{base_parameter}Modulation': (float, 'mod_dist'),
         }
-        
         return parameter_addresses
         
     
