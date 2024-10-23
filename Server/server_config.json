@@ -9,7 +9,22 @@
                         "max":1.0,
                         "min":0.0
                         },
-        "number_motors": 32,
+        "serv_rate": 360
+    },
+    "vest_f": {
+        "vrc_groups": [["Back", 16]],
+        "motor_limits": {
+                        "max":1.0,
+                        "min":0.0
+                        },
+        "serv_rate": 360
+    },
+    "vest_b": {
+        "vrc_groups": [["Back", 16]],
+        "motor_limits": {
+                        "max":1.0,
+                        "min":0.0
+                        },
         "serv_rate": 360
     },
     "head": {
@@ -18,7 +33,6 @@
                         "max":0.5,
                         "min":0.0
                         },
-        "number_motors": 8,
         "serv_rate":350
     }
 }
