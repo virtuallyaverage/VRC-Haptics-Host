@@ -112,9 +112,9 @@ class VRCBoardHandler:
         elif (address in self.parameter_addresses.keys()):
             var_type, var_name = self.parameter_addresses[address]
         
-            if var_type == type(args[0][0]):
-                setattr(self, var_name, args[0][0])
-                print(var_name, "set to:", args[0][0])
+            if var_type == type(args[0]):
+                setattr(self, var_name, args[0])
+                print(var_name, "set to:", args[0])
             else:
                 print(f"wrong variable type at address: {address}, TYPE: {type(args[0][0])}, value: {args}")
         else:
@@ -147,6 +147,7 @@ class VRCBoardHandler:
                 
             colliders_seen += num_colliders
         self.num_colliders = colliders_seen
+
         return motor_colliders
      
     def _build_parameter_addresses(self,

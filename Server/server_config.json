@@ -12,7 +12,7 @@
         "serv_rate": 360
     },
     "vest_f": {
-        "vrc_groups": [["Back", 16]],
+        "vrc_groups": [["Front", 16]],
         "motor_limits": {
                         "max":1.0,
                         "min":0.0
