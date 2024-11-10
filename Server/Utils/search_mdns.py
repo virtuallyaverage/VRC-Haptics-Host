@@ -16,7 +16,7 @@ if __name__ == "__main__":
     listener = MyListener()
     
     # Browsing for all services
-    browser = ServiceBrowser(zeroconf, "_haptics._osc.local.", listener)
+    browser = ServiceBrowser(zeroconf, "_haptics._udp.local.", listener)
     
     try:
         input("Press enter to exit...\n\n")

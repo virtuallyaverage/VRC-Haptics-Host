@@ -61,6 +61,24 @@ class VRCConnnectionHandler:
     def close(self):
         self.server.shutdown()
         self.server_thread.join()
+        
+class VRCBoardParameters:
+    def __init__(self, 
+                 motors_enabled: bool,
+                 visuals_enabled: bool,
+                 intensity_scale: float,
+                 mod_dist: float,
+                 mod_freq: float) -> None:
+        self.motors_enabled = motors_enabled
+        self.visuals_enabled = visuals_enabled
+        self.intensity_scale = intensity_scale
+        self.mod_dist = mod_dist
+        self.mod_freq = mod_freq  
+        
+    def print(self):
+        for key, value in self.__dict__.items():
+            print(f"{key}: {value}")
+            
     
 class VRCBoardHandler:
     def __init__(self, 
@@ -90,6 +108,22 @@ class VRCBoardHandler:
     
     def get_parameter_addresses(self) -> list[str]:
         return self.parameter_addresses
+    
+    def get_params(self) -> 'VRCBoardParameters':
+        return VRCBoardParameters(
+            motors_enabled=self.motors_enabled,
+            visuals_enabled=self.visuals_enabled,
+            intensity_scale=self.intensity_scale,
+            mod_dist=self.mod_dist,
+            mod_freq=self.mod_freq
+        )
+        
+    def set_params(self, params: 'VRCBoardParameters') -> None:
+        self.motors_enabled = params.motors_enabled
+        self.visuals_enabled = params.visuals_enabled
+        self.intensity_scale = params.intensity_scale
+        self.mod_dist = params.mod_dist
+        self.mod_freq = params.mod_freq
     
     #callbacks for variables
     def get_intensity(self) -> float:

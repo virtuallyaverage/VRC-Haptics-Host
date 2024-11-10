@@ -67,7 +67,6 @@ class board_handler:
         
         #frequency setup
         self.update_period = 1/update_rate
-        self.last_update_time = 0
         self.last_htrbt = 0 # not been pinged yet
         
         #statically allocate empty array
@@ -96,32 +95,21 @@ class board_handler:
     def tick(self) -> None:
         if self.last_htrbt != 0:
             diff = time.time() - self.last_htrbt 
-            if diff > 3.0 and diff < self.timeout_delay:
-                self._ping_board() #debounced, we can keep pinging as long a heartbeat is expired
-                if self.state != 'EXPIRED' and self.state != 'DISCONNECTED':
-                    self.state = 'EXPIRED'
-                    if (self.announce_disc and not self.was_announced):
-                        print(f"{self.name} Disconnected.")
-                        self.was_announced = True   
-                        
-        if (self.state == 'EXPIRED'):
-            self.state = 'DISCONNECTED'
-        
-        if self.state != 'EXPIRED' and self.state != 'DISCONNECTED':
-            next_update = self.last_update_time + self.update_period
-            time_till = time.time()- next_update
-            #if time_till > 0.001 and self.last_update_time != 0:
-                #print(f"Overrun on {self.name}: {time_till:06f}s over target")
-                
-            self.send_packet() #function will be debounced to desired rate
-            self.last_update_time = time.time()
+            if diff > 3.0:
+                self._ping_board() #debounced @ 1hz
+                self.state = 'DISCONNECTED'
+                if (self.announce_disc and not self.was_announced):
+                    print(f"{self.name} Disconnected.")
+                    self.was_announced = True   
+            else:
+                if (self.state != 'DISCONNECTED'):
+                    self.send_packet() #function will be debounced to desired rate
         
     @debounceC(lambda self: self.update_period)      
     def send_packet(self) -> None:
         #set to zero if disabled  
         if self.vrc_board.motors_enabled:
             modulated_array = self.mod.sin_interp(self.vrc_board.collider_values)
-            #scale to motor_limits in the server_config.json
             modulated_array = modulated_array * self.motor_range + self.motor_limits['min']
         else: 
             modulated_array = self.empty_array
