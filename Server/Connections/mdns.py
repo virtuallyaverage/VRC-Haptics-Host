@@ -7,7 +7,7 @@ class MDNSHandler():
         
         self._zeroconfig = Zeroconf()
         self._handler = _MDNSListener(self)
-        self._browser = ServiceBrowser(self._zeroconfig, "_haptics._osc.local.", self._handler)
+        self._browser = ServiceBrowser(self._zeroconfig, "_haptics._udp.local.", self._handler)
         
         self._add_callbacks = []
         self._remove_callbacks = []
