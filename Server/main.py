@@ -21,8 +21,6 @@ def buffer():
         devices.tick() 
         
 
-        
-
 if __name__ == "__main__":
     try:
         buffer()

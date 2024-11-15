@@ -90,7 +90,7 @@ class VRCBoardHandler:
         
         # float parameters
         self.intensity_scale = 1
-        self.mod_dist = 0.2
+        self.mod_dist = 0.0
         self.mod_freq = 0.2
         
         self.num_colliders = 0
