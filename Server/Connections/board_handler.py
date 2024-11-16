@@ -70,6 +70,8 @@ class board_handler:
         self.last_ping = 0
         self.update_period = 1/update_rate
         self.last_htrbt = 0 # not been pinged yet
+        self.last_ping_sent = 0
+        self.last_pint_recv = 0
         
         #statically allocate empty array
         self.empty_array = [float(0)] * self.num_motors
@@ -138,10 +140,8 @@ class board_handler:
         Returns:
             str: Byte Strings
         """
-        # Convert each integer to a zero-padded 4-character hexadecimal string
-        hex_strings = [f"{num:04x}" for num in int_array]
-        
-        # Concatenate all hexadecimal strings
+        # Convert each integer to a zero-padded 4-byte hexadecimal string
+        hex_strings = [f"{num:04x}" for num in int_array] # noqa: F821
         hex_string = ''.join(hex_strings)
         
         return hex_string
@@ -149,16 +149,15 @@ class board_handler:
     def _handle_hrtbt(self, address, *args):
         if (self.was_announced):
             print(f"{self.name} Reconnected.")
-            
-        print(f"{self.name} heartbeat recieved")
-            
+             
         self.state = 'CONNECTED'  
         self.was_announced = False
         self.last_htrbt = time.time()
         
     def _handle_ping(self, address, *args):
-        print(f"Recieved Ping from: {self.name} with MAC:{args[1]}")
+        print(f"{self.name} ping recieved")
         self.last_htrbt = time.time() + 5 #give five second leeway for connection to get setup
+        self.last_pint_recv = time.time() 
 
     def close(self):
         self.server.shutdown()
