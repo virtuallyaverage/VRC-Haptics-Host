@@ -68,6 +68,7 @@ class haptic_devices:
             vrc_groups=self.configs[name]['vrc_groups'],
             timeout_delay=self.configs['server']['timeout_delay'],
             motor_limits=self.configs[name]['motor_limits'],
+            mac = device_info['mac']
             )
         params = self.handlers[name].vrc_board.get_params()
         params.print()

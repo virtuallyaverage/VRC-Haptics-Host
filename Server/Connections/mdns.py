@@ -35,7 +35,8 @@ class MDNSHandler():
         new_device = {
             'ip': info.addresses[0],
             'port': 1027,
-            'name': info.name
+            'name': info.name,
+            'mac': f"{info.properties[b'MAC']}"
         }
         
         # keyed by split of server name: e.g: vest.local -> vest

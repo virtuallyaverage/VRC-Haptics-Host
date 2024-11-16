@@ -3,7 +3,7 @@ import socket
 
 # Define the service details
 service_type = "_haptics._udp.local."  # Updated to end with ._udp.local.
-service_name = "vest_b._haptics._udp.local."
+service_name = "vest_f._haptics._udp.local."
 service_port = 12345  # Replace with the actual port number
 service_ip = "127.0.0.1"  # Replace with the actual IP address
 

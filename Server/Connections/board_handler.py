@@ -6,7 +6,6 @@ from pythonosc.dispatcher import Dispatcher
 from pythonosc.osc_server import BlockingOSCUDPServer
 
 from Utils.debounce import debounce_class as debounceC
-from Utils.debounce import debounce as debounce
 
 #wrap locals in check to allow file testing
 if __name__ != "__main__":
@@ -45,6 +44,7 @@ class board_handler:
                  vrc_groups: list[tuple[str, int]],
                  timeout_delay: float,
                  motor_limits: float, 
+                 mac: str,
                  ) -> None:
         
         # set class variables
@@ -59,6 +59,7 @@ class board_handler:
         self.timeout_delay = timeout_delay
         self.motor_limits = motor_limits
         self.motor_range = motor_limits['max']- motor_limits['min']
+        self.mac = mac
         
         #state manager setup
         self.state = 'NEW'
@@ -66,6 +67,7 @@ class board_handler:
         self.inactive = False
         
         #frequency setup
+        self.last_ping = 0
         self.update_period = 1/update_rate
         self.last_htrbt = 0 # not been pinged yet
         
@@ -84,6 +86,7 @@ class board_handler:
         # Create receiving server for this device
         self.dispatcher = Dispatcher()
         self.dispatcher.map("/hrtbt", self._handle_hrtbt)
+        self.dispatcher.map("/ping", self._handle_ping)
         self.server = BlockingOSCUDPServer((self.own_ip, self.recv_port), self.dispatcher)
         self.server_thread = threading.Thread(target=self.server.serve_forever)
         self.server_thread.start()
@@ -96,7 +99,8 @@ class board_handler:
         if self.last_htrbt != 0:
             diff = time.time() - self.last_htrbt 
             if diff > 3.0:
-                self._ping_board() #debounced @ 1hz
+                print(f"Big diff {self.name}: {diff}")
+                self._ping_board() #debounced @ 3hz
                 self.state = 'DISCONNECTED'
                 if (self.announce_disc and not self.was_announced):
                     print(f"{self.name} Disconnected.")
@@ -119,10 +123,12 @@ class board_handler:
         hex_string = self._compile_array(int_array)
         self.client.send_message("/h", hex_string) # Send update over OSC
         
-    @debounce(1)
     def _ping_board(self) -> None:
-        self.client.send_message('/ping', self.recv_port) # send ping after server already set up
-                    
+        if time.time()-self.last_ping > 3:
+            print(f"Pinged: {self.name}: {time.time()-self.last_ping}")
+            self.last_ping = time.time()
+            self.client.send_message('/ping', self.recv_port) # send ping after server already set up
+                        
     def _compile_array(self, int_array: list[int]) -> str:
         """Compile Int array into byte string to send to device
 
@@ -132,7 +138,7 @@ class board_handler:
         Returns:
             str: Byte Strings
         """
-        # Convert each integer to a zero-padded 4-byte hexadecimal string
+        # Convert each integer to a zero-padded 4-character hexadecimal string
         hex_strings = [f"{num:04x}" for num in int_array]
         
         # Concatenate all hexadecimal strings
@@ -144,15 +150,15 @@ class board_handler:
         if (self.was_announced):
             print(f"{self.name} Reconnected.")
             
+        print(f"{self.name} heartbeat recieved")
+            
         self.state = 'CONNECTED'  
         self.was_announced = False
         self.last_htrbt = time.time()
         
     def _handle_ping(self, address, *args):
-        print(address)
-        print(args)
+        print(f"Recieved Ping from: {self.name} with MAC:{args[1]}")
         self.last_htrbt = time.time() + 5 #give five second leeway for connection to get setup
-        
 
     def close(self):
         self.server.shutdown()
