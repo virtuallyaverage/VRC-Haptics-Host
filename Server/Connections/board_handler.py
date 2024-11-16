@@ -68,6 +68,8 @@ class board_handler:
         #frequency setup
         self.update_period = 1/update_rate
         self.last_htrbt = 0 # not been pinged yet
+        self.last_ping_sent = 0
+        self.last_pint_recv = 0
         
         #statically allocate empty array
         self.empty_array = [float(0)] * self.num_motors
@@ -84,6 +86,7 @@ class board_handler:
         # Create receiving server for this device
         self.dispatcher = Dispatcher()
         self.dispatcher.map("/hrtbt", self._handle_hrtbt)
+        self.dispatcher.map("/ping", self._handle_ping)
         self.server = BlockingOSCUDPServer((self.own_ip, self.recv_port), self.dispatcher)
         self.server_thread = threading.Thread(target=self.server.serve_forever)
         self.server_thread.start()
@@ -119,9 +122,12 @@ class board_handler:
         hex_string = self._compile_array(int_array)
         self.client.send_message("/h", hex_string) # Send update over OSC
         
-    @debounce(1)
     def _ping_board(self) -> None:
-        self.client.send_message('/ping', self.recv_port) # send ping after server already set up
+        diff = time.time()-self.last_ping_sent
+        if diff > 2 or self.last_ping_sent == 0:
+            print(f"Sent Ping to: {self.name}")
+            self.last_ping_sent = time.time()
+            self.client.send_message('/ping', self.recv_port) # send ping after server already set up
                     
     def _compile_array(self, int_array: list[int]) -> str:
         """Compile Int array into byte string to send to device
@@ -134,8 +140,6 @@ class board_handler:
         """
         # Convert each integer to a zero-padded 4-byte hexadecimal string
         hex_strings = [f"{num:04x}" for num in int_array]
-        
-        # Concatenate all hexadecimal strings
         hex_string = ''.join(hex_strings)
         
         return hex_string
@@ -143,16 +147,15 @@ class board_handler:
     def _handle_hrtbt(self, address, *args):
         if (self.was_announced):
             print(f"{self.name} Reconnected.")
-            
+             
         self.state = 'CONNECTED'  
         self.was_announced = False
         self.last_htrbt = time.time()
         
     def _handle_ping(self, address, *args):
-        print(address)
-        print(args)
+        print(f"{self.name} ping recieved")
         self.last_htrbt = time.time() + 5 #give five second leeway for connection to get setup
-        
+        self.last_pint_recv = time.time() 
 
     def close(self):
         self.server.shutdown()

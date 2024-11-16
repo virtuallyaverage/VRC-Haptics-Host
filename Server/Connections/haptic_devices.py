@@ -35,7 +35,6 @@ class haptic_devices:
         #name of device deleted
         name = info.server.split('.')[0]
         params = self.handlers[name].vrc_board.get_params()
-        params.print()
         
         #delete old device
         self.delete_device(name)
@@ -69,8 +68,6 @@ class haptic_devices:
             timeout_delay=self.configs['server']['timeout_delay'],
             motor_limits=self.configs[name]['motor_limits'],
             )
-        params = self.handlers[name].vrc_board.get_params()
-        params.print()
         
         self.vrc.sub_to_address(self.handlers[name].vrc_board.param, self.handlers[name].vrc_board.vrc_callback)
 
