@@ -12,7 +12,8 @@ while True:
     
     client.send_message(f"{prefix}/{group}_{last_motor}", 0.0)
     client.send_message(f"{prefix}/{group}_{motor_num}", 0.9)
-    print(f"Sent: {f"{prefix}/{group}_{motor_num}"}")
+    addr = f"{prefix}/{group}_{motor_num}"
+    print(f"Sent: {addr}")
     last_motor = motor_num
     
     if (motor_num == 's'):

