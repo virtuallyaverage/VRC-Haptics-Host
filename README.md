@@ -1,4 +1,5 @@
 # VRC-Haptics-Host
+## See updated project here: https://github.com/VRC-Haptics
 A server and prefab combo prioritizing practical usability and easy customization.
 ## Features
  - **In-game haptic configuration**
